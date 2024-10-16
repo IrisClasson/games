@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ghost Living Room Escape</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Boys Living Room Escape</title>
   <style>
     body {
       margin: 0;
@@ -53,19 +53,6 @@
   </style>
 </head>
 <body>
-  <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
-    <symbol id="branch" viewBox="0 0 100 100">
-      <path d="M0,0 Q50,100 100,0" stroke="brown" stroke-width="10" fill="none" />
-      <path d="M20,30 Q35,50 50,30" stroke="green" stroke-width="5" fill="none" />
-      <path d="M50,60 Q65,80 80,60" stroke="green" stroke-width="5" fill="none" />
-    </symbol>
-    <symbol id="tree" viewBox="0 0 100 100">
-      <rect x="40" y="60" width="20" height="40" fill="brown" />
-      <polygon points="50,0 20,60 80,60" fill="green" />
-      <polygon points="50,30 30,70 70,70" fill="darkgreen" />
-    </symbol>
-  </svg>
-
   <div id="lifeBar"><div id="lifeBarFill"></div></div>
   <div id="timer">Time: 0s</div>
   <canvas id="gameCanvas"></canvas>
@@ -88,33 +75,40 @@
     canvas.height = window.innerHeight;
 
     // Load images
-    const ghostImg = new Image();
-    ghostImg.src = 'images/ghost.png';
+    const boysImg = new Image();
+    boysImg.src = 'images/boys.png';
     const doorImg = new Image();
     doorImg.src = 'images/door.png';
 
-    // Ghost settings
-    const ghost = {
+    // boys settings
+    const boysAspectRatio = 0.75;
+    const boysHeight = 150;
+    const boysWidth = boysHeight * boysAspectRatio;
+
+    const boys = {
       x: 100,
       y: canvas.height / 2,
-      width: 80,
-      height: 80,
-      velocityY: 0,
+      width: boysWidth,
+      height: boysHeight,
       lives: 10
     };
 
     let obstacles = [];
     const obstacleWidth = 60;
-    const gapSize = 200;
+    const gapSize = 300;
     let gameOver = false;
     let isMoving = false;
     let gameTime = 0;
     let roomLength = 0;
     let doorPosition = 0;
-    let backgroundGradient;
-    const darkColor = 'rgba(0, 0, 0, 0.8)';
-    const lightColor = 'rgba(240, 240, 240, 1)';
-    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+    let touchStartY = 0;
+    let isTouching = false;
+
+    // New variables for smooth movement
+    let upPressed = false;
+    let downPressed = false;
+    const movementSpeed = 5;
 
     function startGame(length) {
       menu.style.display = 'none';
@@ -131,67 +125,39 @@
       }
       doorPosition = canvas.width + roomLength;
       gameTime = 0;
-      ghost.x = 100;
-      ghost.y = canvas.height / 2;
-      ghost.lives = 10;
+      boys.x = 100;
+      boys.y = canvas.height / 2;
+      boys.lives = 10;
       obstacles = [];
       gameOver = false;
-
-      // Create background gradient
-      backgroundGradient = ctx.createLinearGradient(0, 0, canvas.width + roomLength, 0);
-      backgroundGradient.addColorStop(0, lightColor);
-      backgroundGradient.addColorStop((canvas.width + roomLength - 200) / (canvas.width + roomLength), lightColor);
-      backgroundGradient.addColorStop(1, darkColor);
-
       generateInitialObstacles();
       updateLifeBar();
       update();
     }
 
-    function generateInitialObstacles() {
-      obstacles = [];
-      const safeZone = 500;
-      
-      for (let i = 0; i < 10; i++) {
-        const obstacleX = canvas.width + i * 500;
-        if (obstacleX < doorPosition - obstacleWidth - safeZone) {
-          generateObstacle(obstacleX);
-        } else {
-          break;
-        }
-      }
-      
-      // Add door as the last obstacle
-      const doorGapSize = ghost.height + 20;
-      const doorGapStartY = (canvas.height - doorGapSize) / 2;
-      obstacles.push({
-        x: doorPosition - obstacleWidth,
-        gapStartY: doorGapStartY,
-        gapEndY: doorGapStartY + doorGapSize,
-        heightTop: doorGapStartY,
-        heightBottom: canvas.height - (doorGapStartY + doorGapSize),
-        hit: false,
-        isDoor: true
-      });
-    }
-
-    function generateObstacle(x) {
+    function generateObstacles() {
       const obstacleHeight = Math.random() * (canvas.height - gapSize - 100) + 50;
       const gapStartY = Math.random() * (canvas.height - gapSize);
       obstacles.push({
-        x: x,
+        x: canvas.width,
         gapStartY: gapStartY,
         gapEndY: gapStartY + gapSize,
         heightTop: gapStartY,
         heightBottom: canvas.height - (gapStartY + gapSize),
-        hit: false,
-        isBranch: true,
-        isTree: true
+        hit: false
       });
     }
 
+    function generateInitialObstacles() {
+      obstacles = [];
+      for (let i = 0; i < 10; i++) {
+        generateObstacles();
+        obstacles[i].x = canvas.width + i * 500;
+      }
+    }
+
     function updateLifeBar() {
-      const percentage = (ghost.lives / 10) * 100;
+      const percentage = (boys.lives / 10) * 100;
       lifeBarFill.style.width = `${percentage}%`;
       lifeBarFill.style.backgroundColor = percentage > 50 ? '#0f0' : percentage > 20 ? '#ff0' : '#f00';
     }
@@ -199,201 +165,186 @@
     function update() {
       if (gameOver) return;
 
-      gameTime += 1/60; // Assuming 60 FPS
+      gameTime += 1/60;
       timerElement.textContent = `Time: ${Math.floor(gameTime)}s`;
+
+      // Move boys based on key presses
+      if (upPressed) {
+        boys.y -= movementSpeed;
+      }
+      if (downPressed) {
+        boys.y += movementSpeed;
+      }
+
+      // Keep boys within canvas
+      if (boys.y < 0) {
+        boys.y = 0;
+      } else if (boys.y + boys.height > canvas.height) {
+        boys.y = canvas.height - boys.height;
+      }
 
       // Clear the canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Create gradient background
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, '#87CEEB');
+      gradient.addColorStop(0.5, '#FFA07A');
+      gradient.addColorStop(1, '#FF69B4');
 
-      // Calculate the world offset
-      let worldOffset = ghost.x - 100;
+      // Fill the canvas with the gradient
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Draw background
-      ctx.save();
-      ctx.translate(-worldOffset, 0);
-      ctx.fillStyle = backgroundGradient;
-      ctx.fillRect(worldOffset, 0, canvas.width + roomLength, canvas.height);
+      // Draw boys
+      ctx.drawImage(boysImg, boys.x, boys.y, boys.width, boys.height);
 
       // Draw obstacles
       obstacles.forEach((obstacle, index) => {
-        const obstacleX = obstacle.x - worldOffset;
-        
-        if (obstacle.isDoor) {
-          // Draw door
-          if (doorImg.complete) {
-            ctx.drawImage(doorImg, obstacleX, 0, obstacleWidth, canvas.height);
-          } else {
-            ctx.fillStyle = 'purple';
-            ctx.fillRect(obstacleX, 0, obstacleWidth, canvas.height);
-          }
-        } else {
-          // Draw top obstacle (branch)
-          if (obstacle.isBranch) {
-            ctx.save();
-            ctx.translate(obstacleX, 0);
-            ctx.scale(obstacleWidth / 100, obstacle.heightTop / 100);
-            ctx.fillStyle = 'green';
-            ctx.fill(new Path2D('M0,0 Q50,100 100,0 M20,30 Q35,50 50,30 M50,60 Q65,80 80,60'));
-            ctx.restore();
-          }
-
-          // Draw bottom obstacle (tree)
-          if (obstacle.isTree) {
-            ctx.save();
-            ctx.translate(obstacleX, obstacle.gapEndY);
-            ctx.scale(obstacleWidth / 100, obstacle.heightBottom / 100);
-            ctx.fillStyle = 'brown';
-            ctx.fillRect(40, 60, 20, 40);
-            ctx.fillStyle = 'green';
-            ctx.beginPath();
-            ctx.moveTo(50, 0);
-            ctx.lineTo(20, 60);
-            ctx.lineTo(80, 60);
-            ctx.closePath();
-            ctx.fill();
-            ctx.fillStyle = 'darkgreen';
-            ctx.beginPath();
-            ctx.moveTo(50, 30);
-            ctx.lineTo(30, 70);
-            ctx.lineTo(70, 70);
-            ctx.closePath();
-            ctx.fill();
-            ctx.restore();
-          }
+        if (isMoving) {
+          obstacle.x -= 2;
         }
+
+        ctx.fillStyle = 'white';
+
+        // Draw top obstacle (ellipse)
+        ctx.beginPath();
+        ctx.ellipse(
+          obstacle.x + obstacleWidth / 2,
+          obstacle.heightTop / 2,
+          obstacleWidth / 2,
+          obstacle.heightTop / 2,
+          0,
+          0,
+          2 * Math.PI
+        );
+        ctx.fill();
+
+        // Draw bottom obstacle (ellipse)
+        ctx.beginPath();
+        ctx.ellipse(
+          obstacle.x + obstacleWidth / 2,
+          canvas.height - obstacle.heightBottom / 2,
+          obstacleWidth / 2,
+          obstacle.heightBottom / 2,
+          0,
+          0,
+          2 * Math.PI
+        );
+        ctx.fill();
 
         // Check for collision
         if (
-          ghost.x + ghost.width > obstacle.x &&
-          ghost.x < obstacle.x + obstacleWidth &&
-          (ghost.y < obstacle.heightTop ||
-            ghost.y + ghost.height > obstacle.gapEndY) &&
+          boys.x + boys.width > obstacle.x &&
+          boys.x < obstacle.x + obstacleWidth &&
+          (boys.y < obstacle.heightTop ||
+            boys.y + boys.height > obstacle.gapEndY) &&
           !obstacle.hit
         ) {
           obstacle.hit = true;
-          if (obstacle.isDoor) {
-            // Win condition
+          boys.lives--;
+          updateLifeBar();
+          if (boys.lives <= 0) {
             gameOver = true;
-            alert(`Congratulations! The ghost escaped through the door in ${Math.floor(gameTime)} seconds!`);
+            alert("Game Over! The boys couldn't escape the room!");
             return;
-          } else {
-            ghost.lives--;
-            updateLifeBar();
-            if (ghost.lives <= 0) {
-              gameOver = true;
-              alert("Game Over! The ghost couldn't escape the room!");
-              return;
-            }
           }
         }
 
         // Remove obstacles that have gone off-screen
-        if (obstacleX + obstacleWidth < -100) {
+        if (obstacle.x + obstacleWidth < 0) {
           obstacles.splice(index, 1);
         }
       });
 
-      // Generate new obstacles as the ghost moves forward
-      if (obstacles.length < 5) {
-        const lastObstacle = obstacles[obstacles.length - 1];
-        const newObstacleX = lastObstacle.x + 500;
-        if (newObstacleX < doorPosition - obstacleWidth - 500) {
-          generateObstacle(newObstacleX);
-        }
+      // Check if we've finished all obstacles
+      if (obstacles.length === 0 || (obstacles[obstacles.length - 1].x + obstacleWidth < boys.x)) {
+        gameOver = true;
+        const score = boys.lives * 100;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'white';
+        ctx.font = '48px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(`Grattis! Du klarade det!`, canvas.width / 2, canvas.height / 2 - 50);
+        ctx.fillText(`Poäng: ${score}`, canvas.width / 2, canvas.height / 2 + 50);
+        ctx.fillText(`Tid: ${Math.floor(gameTime)} sekunder`, canvas.width / 2, canvas.height / 2 + 150);
+        return;
       }
-
-      ctx.restore();
-
-      // Move ghost vertically based on velocityY (only for keyboard controls)
-      if (!isTouch) {
-        ghost.y += ghost.velocityY;
-      }
-
-      // Keep ghost within canvas
-      if (ghost.y < 0) {
-        ghost.y = 0;
-      } else if (ghost.y + ghost.height > canvas.height) {
-        ghost.y = canvas.height - ghost.height;
-      }
-
-      // Update ghost's x position
-      if (isMoving && ghost.x < doorPosition - ghost.width) {
-        ghost.x += 2; // Move the ghost
-      } else if (ghost.x >= doorPosition - ghost.width) {
-        // Stop the ghost at the door
-        ghost.x = doorPosition - ghost.width;
-        // Trigger win condition if the ghost is aligned with the door gap
-        const door = obstacles.find(obs => obs.isDoor);
-        if (door && ghost.y >= door.gapStartY && ghost.y + ghost.height <= door.gapEndY) {
-          gameOver = true;
-          alert(`Congratulations! The ghost escaped through the door in ${Math.floor(gameTime)} seconds!`);
-          return;
-        }
-      }
-
-      // Draw ghost
-      ctx.drawImage(ghostImg, 100, ghost.y, ghost.width, ghost.height);
 
       requestAnimationFrame(update);
     }
 
     // Key control handlers
-    document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('keyup', handleKeyUp);
-
-    // Touch event listeners
-    canvas.addEventListener('touchstart', handleTouchStart);
-    canvas.addEventListener('touchmove', handleTouchMove);
-    canvas.addEventListener('touchend', handleTouchEnd);
-
-    let touchStartY = 0;
-    let touchStartGhostY = 0;
-
-    function handleKeyDown(e) {
+    document.addEventListener('keydown', function (e) {
       if (e.code === 'Space') {
         isMoving = true;
       } else if (e.code === 'ArrowUp') {
-        ghost.velocityY = -5;
+        upPressed = true;
       } else if (e.code === 'ArrowDown') {
-        ghost.velocityY = 5;
+        downPressed = true;
       }
-    }
+    });
 
-    function handleKeyUp(e) {
+    document.addEventListener('keyup', function (e) {
       if (e.code === 'Space') {
         isMoving = false;
-      } else if (e.code === 'ArrowUp' || e.code === 'ArrowDown') {
-        ghost.velocityY = 0;
+      } else if (e.code === 'ArrowUp') {
+        upPressed = false;
+      } else if (e.code === 'ArrowDown') {
+        downPressed = false;
       }
-    }
+    });
 
-    function handleTouchStart(e) {
-      e.preventDefault();
+    // Touch event handlers
+    canvas.addEventListener('touchstart', handleTouchStart, false);
+    canvas.addEventListener('touchmove', handleTouchMove, false);
+    canvas.addEventListener('touchend', handleTouchEnd, false);
+
+    function handleTouchStart(event) {
+      event.preventDefault();
+      isTouching = true;
       isMoving = true;
-      touchStartY = e.touches[0].clientY;
-      touchStartGhostY = ghost.y;
+      touchStartY = event.touches[0].clientY;
     }
 
-    function handleTouchMove(e) {
-      e.preventDefault();
-      const touchY = e.touches[0].clientY;
-      const deltaY = touchY - touchStartY;
+    function handleTouchMove(event) {
+      event.preventDefault();
+      if (!isTouching) return;
+
+      let touchEndY = event.touches[0].clientY;
+
+      // Calculate vertical movement
+      let deltaY = touchEndY - touchStartY;
       
-      // Move the ghost directly based on finger position
-      ghost.y = touchStartGhostY + deltaY;
-      
-      // Keep the ghost within the canvas bounds
-      if (ghost.y < 0) {
-        ghost.y = 0;
-      } else if (ghost.y + ghost.height > canvas.height) {
-        ghost.y = canvas.height - ghost.height;
+      // Move the boys directly by the delta
+      boys.y += deltaY;
+
+      // Keep boys within canvas
+      if (boys.y < 0) {
+        boys.y = 0;
+      } else if (boys.y + boys.height > canvas.height) {
+        boys.y = canvas.height - boys.height;
       }
+
+      // Update touch start position for next move event
+      touchStartY = touchEndY;
     }
 
-    function handleTouchEnd(e) {
-      e.preventDefault();
+    function handleTouchEnd(event) {
+      event.preventDefault();
+      isTouching = false;
       isMoving = false;
     }
+
+    // Resize handler
+    window.addEventListener('resize', function() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+
+    // Start the game loop
+    update();
   </script>
 </body>
 </html>
