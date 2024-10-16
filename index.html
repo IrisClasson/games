@@ -114,6 +114,7 @@
     let backgroundGradient;
     const darkColor = 'rgba(0, 0, 0, 0.8)';
     const lightColor = 'rgba(240, 240, 240, 1)';
+    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
     function startGame(length) {
       menu.style.display = 'none';
@@ -303,8 +304,10 @@
 
       ctx.restore();
 
-      // Move ghost vertically based on velocityY
-      ghost.y += ghost.velocityY;
+      // Move ghost vertically based on velocityY (only for keyboard controls)
+      if (!isTouch) {
+        ghost.y += ghost.velocityY;
+      }
 
       // Keep ghost within canvas
       if (ghost.y < 0) {
@@ -344,6 +347,7 @@
     canvas.addEventListener('touchend', handleTouchEnd);
 
     let touchStartY = 0;
+    let touchStartGhostY = 0;
 
     function handleKeyDown(e) {
       if (e.code === 'Space') {
@@ -367,6 +371,7 @@
       e.preventDefault();
       isMoving = true;
       touchStartY = e.touches[0].clientY;
+      touchStartGhostY = ghost.y;
     }
 
     function handleTouchMove(e) {
@@ -374,19 +379,20 @@
       const touchY = e.touches[0].clientY;
       const deltaY = touchY - touchStartY;
       
-      if (deltaY < -20) {
-        ghost.velocityY = -5;
-      } else if (deltaY > 20) {
-        ghost.velocityY = 5;
-      } else {
-        ghost.velocityY = 0;
+      // Move the ghost directly based on finger position
+      ghost.y = touchStartGhostY + deltaY;
+      
+      // Keep the ghost within the canvas bounds
+      if (ghost.y < 0) {
+        ghost.y = 0;
+      } else if (ghost.y + ghost.height > canvas.height) {
+        ghost.y = canvas.height - ghost.height;
       }
     }
 
     function handleTouchEnd(e) {
       e.preventDefault();
       isMoving = false;
-      ghost.velocityY = 0;
     }
   </script>
 </body>
