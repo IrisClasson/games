@@ -60,6 +60,37 @@
       font-size: 20px;
       font-weight: bold;
     }
+    #congratsWindow {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+  }
+    #congratsContent {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      max-width: 90%;
+      max-height: 90%;
+      overflow-y: auto;
+    }
+    #congratsContent h2 {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+    #congratsContent p {
+      font-size: 18px;
+      margin-bottom: 5px;
+    }
   </style>
 </head>
 <body>
@@ -76,6 +107,13 @@
     <button onclick="startGame('medium')">Medium</button>
     <button onclick="startGame('long')">Long</button>
   </div>
+  <div id="congratsWindow">
+    <div id="congratsContent">
+      <h2>Grattis! Du klarade det!</h2>
+      <p id="scoreText"></p>
+      <p id="timeText"></p>
+    </div>
+  </div>
 
   <script>
     const canvas = document.getElementById('gameCanvas');
@@ -84,6 +122,9 @@
     const timerElement = document.getElementById('timer');
     const menu = document.getElementById('menu');
     const velocityCheckbox = document.getElementById('velocityCheckbox');
+    const congratsWindow = document.getElementById('congratsWindow');
+    const scoreText = document.getElementById('scoreText');
+    const timeText = document.getElementById('timeText');
 
     // Set canvas size
     canvas.width = window.innerWidth;
@@ -128,8 +169,8 @@
     // New variables for shaking effect
     let shakeTime = 0;
     let shakeIntensity = 0;
-    const maxShakeTime = 0.5; // seconds
-    const maxShakeIntensity = 10; // pixels
+    const maxShakeTime = 1; // seconds
+    const maxShakeIntensity = 30; // pixels
 
     // New variables for velocity mode
     let velocityMode = false;
@@ -139,6 +180,7 @@
 
     async function startGame(length) {
       menu.style.display = 'none';
+      hideCongrats(); // Hide congrats window when starting a new game
       switch (length) {
         case 'short':
           roomLength = 3000;
@@ -327,14 +369,9 @@
       if (obstacles.length === 0 || (obstacles[obstacles.length - 1].x + obstacleWidth < boys.x)) {
         gameOver = true;
         const score = boys.lives * 100;
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = 'white';
-        ctx.font = '48px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(`Grattis! Du klarade det!`, canvas.width / 2, canvas.height / 2 - 50);
-        ctx.fillText(`Poäng: ${score}`, canvas.width / 2, canvas.height / 2 + 50);
-        ctx.fillText(`Tid: ${Math.floor(gameTime)} sekunder`, canvas.width / 2, canvas.height / 2 + 150);
+        scoreText.textContent = `Poäng: ${score}`;
+        timeText.textContent = `Tid: ${Math.floor(gameTime)} sekunder`;
+        congratsWindow.style.display = 'block';
         return;
       }
 
@@ -355,7 +392,7 @@
     document.addEventListener('keyup', function (e) {
       if (e.code === 'Space') {
         isMoving = false;
-        if(velocityMode.checked){
+        if(velocityMode){
             currentVelocity = 2;
         }
       } else if (e.code === 'ArrowUp') {
@@ -410,6 +447,7 @@
     // Add event listener for velocity toggle
     velocityCheckbox.addEventListener('change', function() {
       velocityMode = this.checked;
+      this.blur(); // This line removes focus from the checkbox after change
     });
 
     // Resize handler
@@ -418,12 +456,14 @@
       canvas.height = window.innerHeight;
     });
 
-    velocityCheckbox.addEventListener('change', function() {
-  velocityMode = this.checked;
-  this.blur(); // This line removes focus from the checkbox after change
-});
+    function hideCongrats() {
+  const congratsWindow = document.getElementById('congratsWindow');
+  congratsWindow.style.display = 'none';
+}
+
     // Start the game loop
     update();
+    hideCongrats();
   </script>
 </body>
 </html>
