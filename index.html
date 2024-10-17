@@ -169,7 +169,7 @@
     // New variables for shaking effect
     let shakeTime = 0;
     let shakeIntensity = 0;
-    const maxShakeTime = 1; // seconds
+    const maxShakeTime = 0.7; // seconds
     const maxShakeIntensity = 30; // pixels
 
     // New variables for velocity mode
@@ -367,14 +367,14 @@
 
       // Check if we've finished all obstacles
       if (obstacles.length === 0 || (obstacles[obstacles.length - 1].x + obstacleWidth < boys.x)) {
-        gameOver = true;
-        const score = boys.lives * 100;
-        scoreText.textContent = `Poäng: ${score}`;
-        timeText.textContent = `Tid: ${Math.floor(gameTime)} sekunder`;
-        congratsWindow.style.display = 'block';
-        return;
-      }
-
+  gameOver = true;
+  // Calculate score based on lives and time.
+  const score = boys.lives * 100 + Math.max(0, Math.floor(5000 - gameTime * 10)); // Adjust as needed
+  scoreText.textContent = `Poäng: ${score}`;
+  timeText.textContent = `Tid: ${Math.floor(gameTime)} sekunder`;
+  congratsWindow.style.display = 'block';
+  return;
+}
       requestAnimationFrame(update);
     }
 
