@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Angry Boys Clone</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas size
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Game constants
+        const VELOCITY_SCALE = 0.23;
+        const ROTATION_SPEED = 0.1;
+
+        // Load images
+        const boysImg = new Image();
+        boysImg.src = 'images/boys2.png';
+        const bedImg = new Image();
+        bedImg.src = 'images/bed.png';
+
+        // Game objects
+        const startBed = {
+            x: 100,
+            y: canvas.height - 300,
+            width: 300,
+            height: 180
+        };
+
+        const boys = {
+            x: startBed.x + startBed.width / 2 - 90,
+            y: startBed.y - 180,
+            width: 180,
+            height: 180,
+            velocity: { x: 0, y: 0 },
+            launched: false,
+            rotation: 0
+        };
+
+        const bed = {
+            x: canvas.width - 450,
+            y: canvas.height - 300,
+            width: 300,
+            height: 180
+        };
+
+        // Game variables
+        let angle = 45;
+        let power = 0;
+        let maxPower;
+        let pulling = false;
+        let touchStartY = 0;
+        let touchStartAngle = 0;
+        let arrowUpPressed = false;
+        let arrowDownPressed = false;
+
+        function calculateVelocity(distance, angleDegrees) {
+            const g = 9.81;
+            const angleRadians = angleDegrees * (Math.PI / 180);
+            const velocity = Math.sqrt((distance * g) / Math.sin(2 * angleRadians));
+            return velocity;
+        }
+
+        function calculateRequiredPower() {
+            const dx = bed.x + bed.width / 2 - boys.x;
+            const dy = bed.y + bed.height / 2 - boys.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            return calculateVelocity(distance, angle);
+        }
+
+        function launchBoys() {
+            boys.launched = true;
+            const velocity = power * VELOCITY_SCALE;
+            boys.velocity.x = Math.cos(angle * Math.PI / 180) * velocity;
+            boys.velocity.y = -Math.sin(angle * Math.PI / 180) * velocity;
+            pulling = false;
+            power = 0;
+        }
+
+        // Event listeners
+        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('keyup', handleKeyUp);
+        canvas.addEventListener('touchstart', handleTouchStart, false);
+        canvas.addEventListener('touchmove', handleTouchMove, false);
+        canvas.addEventListener('touchend', handleTouchEnd, false);
+
+        function handleKeyDown(e) {
+            if (e.code === 'Space' && !boys.launched) {
+                pulling = true;
+            } else if (e.code === 'ArrowUp') {
+                arrowUpPressed = true;
+            } else if (e.code === 'ArrowDown') {
+                arrowDownPressed = true;
+            }
+        }
+
+        function handleKeyUp(e) {
+            if (e.code === 'Space' && !boys.launched) {
+                launchBoys();
+            } else if (e.code === 'ArrowUp') {
+                arrowUpPressed = false;
+            } else if (e.code === 'ArrowDown') {
+                arrowDownPressed = false;
+            }
+        }
+
+        function handleTouchStart(event) {
+            event.preventDefault();
+            if (!boys.launched) {
+                pulling = true;
+                touchStartY = event.touches[0].clientY;
+                touchStartAngle = angle;
+            }
+        }
+
+        function handleTouchMove(event) {
+            event.preventDefault();
+            if (!boys.launched && pulling) {
+                const touchY = event.touches[0].clientY;
+                const deltaY = touchY - touchStartY;
+                
+                // Change angle based on touch movement
+                // Increased sensitivity by changing divisor from 50 to 10
+                angle = touchStartAngle - deltaY / 10;
+                
+                // Clamp angle between 0 and 90 degrees
+                angle = Math.max(0, Math.min(90, angle));
+            }
+        }
+
+        function handleTouchEnd(event) {
+            event.preventDefault();
+            if (!boys.launched && pulling) {
+                launchBoys();
+            }
+            pulling = false;
+        }
+
+        function update() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Create gradient background
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#FFD700');  // Yellow at the top
+            gradient.addColorStop(1, '#FFA500');  // Orange at the bottom
+
+            // Fill the canvas with the gradient
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            maxPower = calculateRequiredPower();
+
+            if (boys.launched) {
+                boys.x += boys.velocity.x;
+                boys.y += boys.velocity.y;
+                boys.velocity.y += 0.5;
+                boys.rotation += ROTATION_SPEED;
+
+                const boysCenterX = boys.x + boys.width / 2;
+                const boysCenterY = boys.y + boys.height / 2;
+
+                if (
+                    boysCenterX > bed.x &&
+                    boysCenterX < bed.x + bed.width &&
+                    boysCenterY > bed.y &&
+                    boysCenterY < bed.y + bed.height
+                ) {
+                    alert('Grattis! Du klarade det!');
+                    resetGame();
+                }
+
+                if (boys.x > canvas.width || boys.y > canvas.height) {
+                    resetGame();
+                }
+            } else {
+                if (pulling) {
+                    power = Math.min(power + 1, maxPower);
+                }
+                // Add this block for arrow key angle control
+                if (arrowUpPressed) {
+                    angle = Math.min(angle + 1, 90);
+                }
+                if (arrowDownPressed) {
+                    angle = Math.max(angle - 1, 0);
+                }
+            }
+
+            // Draw the starting bed
+            ctx.drawImage(bedImg, startBed.x, startBed.y, startBed.width, startBed.height);
+
+            // Draw the target bed
+            ctx.drawImage(bedImg, bed.x, bed.y, bed.width, bed.height);
+
+            ctx.save();
+            ctx.translate(boys.x + boys.width / 2, boys.y + boys.height / 2);
+            ctx.rotate(boys.rotation);
+            ctx.drawImage(boysImg, -boys.width / 2, -boys.height / 2, boys.width, boys.height);
+            ctx.restore();
+
+            ctx.fillStyle = 'blue';
+            ctx.fillRect(20, 20, (power / maxPower) * 200, 20);
+
+            ctx.strokeStyle = 'red';
+            ctx.beginPath();
+            ctx.moveTo(20 + 200, 20);
+            ctx.lineTo(20 + 200, 40);
+            ctx.stroke();
+
+            ctx.fillStyle = 'black';
+            ctx.font = '16px Arial';
+            ctx.fillText(`Angle: ${Math.round(angle)}°`, 20, 60);
+            
+            if (!boys.launched) {
+                const lineLength = 200;
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+                ctx.beginPath();
+                ctx.moveTo(boys.x + boys.width / 2, boys.y + boys.height / 2);
+                ctx.lineTo(
+                    boys.x + boys.width / 2 + Math.cos(angle * Math.PI / 180) * lineLength,
+                    boys.y + boys.height / 2 - Math.sin(angle * Math.PI / 180) * lineLength
+                );
+                ctx.lineWidth = 5;
+                ctx.stroke();
+            }
+
+            requestAnimationFrame(update);
+        }
+
+        function resetGame() {
+            boys.x = startBed.x + startBed.width / 2 - 90;
+            boys.y = startBed.y - 180;
+            boys.velocity = { x: 0, y: 0 };
+            boys.launched = false;
+            boys.rotation = 0;
+            power = 0;
+            angle = 45;
+        }
+
+        let imagesLoaded = 0;
+        function imageLoaded() {
+            imagesLoaded++;
+            if (imagesLoaded === 2) {
+                update();
+            }
+        }
+        boysImg.onload = imageLoaded;
+        bedImg.onload = imageLoaded;
+    </script>
+</body>
+</html>
