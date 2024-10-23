@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Angry Boys Clone</title>
+    <title>Hoppa i sängen</title>
     <style>
         body {
             margin: 0;
@@ -38,9 +38,16 @@
             font-size: 16px;
         }
     </style>
+  <link rel="stylesheet" href="styles/styles.css">
 </head>
 <body>
     <canvas id="gameCanvas"></canvas>
+    <div class="info-box">
+        <h3>How to Play</h3>
+        <p>SPACE DOWN: Load jump</p>
+        <p>SPACE UP: Jump</p>
+        <p>UP/DOWN: Choose angle</p>
+    </div>
     <div id="congratsWindow" style="display: none;">
         <div id="congratsContent">
             <h2>Grattis! Du klarade det!</h2>
@@ -107,6 +114,7 @@
         let arrowDownPressed = false;
         let gameStartTime;
         let gameEndTime;
+        let speed = 1; // New variable for speed
 
         function calculateVelocity(distance, angleDegrees) {
             const g = 9.81;
@@ -124,7 +132,7 @@
 
         function launchBoys() {
             boys.launched = true;
-            const velocity = power * VELOCITY_SCALE;
+            const velocity = power * VELOCITY_SCALE * speed; // Apply speed to velocity
             boys.velocity.x = Math.cos(angle * Math.PI / 180) * velocity;
             boys.velocity.y = -Math.sin(angle * Math.PI / 180) * velocity;
             pulling = false;
@@ -146,6 +154,8 @@
                 arrowUpPressed = true;
             } else if (e.code === 'ArrowDown') {
                 arrowDownPressed = true;
+            } else if (e.code === 'KeyS') { // New key handler for speed toggle
+                speed = speed === 1 ? 2 : 1;
             }
         }
 
@@ -215,10 +225,10 @@
             maxPower = calculateRequiredPower();
 
             if (boys.launched) {
-                boys.x += boys.velocity.x;
-                boys.y += boys.velocity.y;
-                boys.velocity.y += 0.5;
-                boys.rotation += ROTATION_SPEED;
+                boys.x += boys.velocity.x * speed; // Apply speed to x movement
+                boys.y += boys.velocity.y * speed; // Apply speed to y movement
+                boys.velocity.y += 0.5 * speed; // Apply speed to gravity
+                boys.rotation += ROTATION_SPEED * speed; // Apply speed to rotation
 
                 const boysCenterX = boys.x + boys.width / 2;
                 const boysCenterY = boys.y + boys.height / 2;
@@ -290,6 +300,7 @@
             ctx.fillStyle = 'black';
             ctx.font = '16px Arial';
             ctx.fillText(`Angle: ${Math.round(angle)}°`, 20, 60);
+            ctx.fillText(`Speed: ${speed}x`, 20, 80); // Display current speed
 
             requestAnimationFrame(update);
         }
@@ -308,23 +319,24 @@
         }
 
         function resetGame() {
-    boys.x = startBed.x + startBed.width / 2 - 90;
-    boys.y = startBed.y - 50;
-    boys.velocity = { x: 0, y: 0 };
-    boys.launched = false;
-    boys.rotation = 0;
-    power = 0;
-    angle = 45;
-    pulling = false;
-    arrowUpPressed = false;
-    arrowDownPressed = false;
-    hideCongrats();
-    gameStartTime = null;
-    gameEndTime = null;
-    
-    // Ensure the game loop continues
-    requestAnimationFrame(update);
-}
+            boys.x = startBed.x + startBed.width / 2 - 90;
+            boys.y = startBed.y - 50;
+            boys.velocity = { x: 0, y: 0 };
+            boys.launched = false;
+            boys.rotation = 0;
+            power = 0;
+            angle = 45;
+            pulling = false;
+            arrowUpPressed = false;
+            arrowDownPressed = false;
+            speed = 1; // Reset speed to normal
+            hideCongrats();
+            gameStartTime = null;
+            gameEndTime = null;
+            
+            // Ensure the game loop continues
+            requestAnimationFrame(update);
+        }
 
         let imagesLoaded = 0;
         function imageLoaded() {

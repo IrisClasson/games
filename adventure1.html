@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Molnresan</title>
+  <link rel="stylesheet" href="styles/styles.css">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+    canvas {
+      display: block;
+      background-color: #f0f0f0;
+    }
+    #lifeBar {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: 200px;
+      height: 20px;
+      background-color: #ddd;
+      border: 1px solid #000;
+    }
+    #lifeBarFill {
+      height: 100%;
+      background-color: #0f0;
+      transition: width 0.3s;
+    }
+    #velocityToggle {
+      position: absolute;
+      top: 40px;
+      left: 10px;
+      font-size: 14px;
+      color: white;
+      background-color: rgba(0, 0, 0, 0.5);
+      padding: 5px;
+      border-radius: 5px;
+    }
+    #menu {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: rgba(255, 255, 255, 0.8);
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+    }
+    button {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+    #timer {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+    #congratsWindow {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+  }
+    #congratsContent {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      max-width: 90%;
+      max-height: 90%;
+      overflow-y: auto;
+    }
+    #congratsContent h2 {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+    #congratsContent p {
+      font-size: 18px;
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+    <div class="info-box">
+        <h3>How to Play</h3>
+        <p>SPACE: Move forward</p>
+        <p>UP/DOWN: Move up/down</p>
+    </div>
+  <div id="lifeBar"><div id="lifeBarFill"></div></div>
+  <div id="velocityToggle">
+    <label for="velocityCheckbox">Velocity Mode</label>
+    <input type="checkbox" id="velocityCheckbox">
+  </div>
+  <div id="timer">Time: 0s</div>
+  <canvas id="gameCanvas"></canvas>
+
+  <div id="menu">
+    <h2>Choose Travel Length</h2>
+    <button onclick="startGame('short')">Short</button>
+    <button onclick="startGame('medium')">Medium</button>
+    <button onclick="startGame('long')">Long</button>
+  </div>
+  <div id="congratsWindow">
+    <div id="congratsContent">
+      <h2>Grattis! Du klarade det!</h2>
+      <p id="scoreText"></p>
+      <p id="timeText"></p>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const lifeBarFill = document.getElementById('lifeBarFill');
+    const timerElement = document.getElementById('timer');
+    const menu = document.getElementById('menu');
+    const velocityCheckbox = document.getElementById('velocityCheckbox');
+    const congratsWindow = document.getElementById('congratsWindow');
+    const scoreText = document.getElementById('scoreText');
+    const timeText = document.getElementById('timeText');
+
+    // Set canvas size
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // Load images
+    const boysImg = new Image();
+    boysImg.src = 'images/boys.png';
+    const doorImg = new Image();
+    doorImg.src = 'images/door.png';
+
+    // boys settings
+    const boysAspectRatio = 0.75;
+    const boysHeight = 150;
+    const boysWidth = boysHeight * boysAspectRatio;
+
+    const boys = {
+      x: 100,
+      y: canvas.height / 2,
+      width: boysWidth,
+      height: boysHeight,
+      lives: 10
+    };
+
+    let obstacles = [];
+    const obstacleWidth = 60;
+    const gapSize = 300;
+    let gameOver = false;
+    let isMoving = false;
+    let gameTime = 0;
+    let roomLength = 0;
+    let doorPosition = 0;
+
+    let touchStartY = 0;
+    let isTouching = false;
+
+    // New variables for smooth movement
+    let upPressed = false;
+    let downPressed = false;
+    const movementSpeed = 5;
+
+    // New variables for shaking effect
+    let shakeTime = 0;
+    let shakeIntensity = 0;
+    const maxShakeTime = 0.7; // seconds
+    const maxShakeIntensity = 30; // pixels
+
+    // New variables for velocity mode
+    let velocityMode = false;
+    let currentVelocity = 2;
+    const maxVelocity = 10;
+    const velocityIncrement = 0.1;
+
+    async function startGame(length) {
+      menu.style.display = 'none';
+      hideCongrats(); // Hide congrats window when starting a new game
+      switch (length) {
+        case 'short':
+          roomLength = 3000;
+          break;
+        case 'medium':
+          roomLength = 6000;
+          break;
+        case 'long':
+          roomLength = 9000;
+          break;
+      }
+      doorPosition = canvas.width + roomLength;
+      gameTime = 0;
+      boys.x = 100;
+      boys.y = canvas.height / 2;
+      boys.lives = 10;
+      obstacles = [];
+      gameOver = false;
+      generateInitialObstacles();
+      updateLifeBar();
+      await update();
+    }
+
+    function generateObstacles() {
+      const gapStartY = Math.random() * (canvas.height - gapSize);
+      obstacles.push({
+        x: canvas.width,
+        gapStartY: gapStartY,
+        gapEndY: gapStartY + gapSize,
+        hit: false
+      });
+    }
+
+    function generateInitialObstacles() {
+      obstacles = [];
+      for (let i = 0; i < 10; i++) {
+        generateObstacles();
+        obstacles[i].x = canvas.width + i * 500;
+      }
+    }
+
+    function updateLifeBar() {
+      const percentage = (boys.lives / 10) * 100;
+      lifeBarFill.style.width = `${percentage}%`;
+      lifeBarFill.style.backgroundColor = percentage > 50 ? '#0f0' : percentage > 20 ? '#ff0' : '#f00';
+    }
+
+    function drawExplosion(x, y) {
+      const explosionRadius = 100;
+      const particleCount = 150;
+      const particleSize = 4;
+
+      for (let i = 0; i < particleCount; i++) {
+        const angle = (Math.PI * 2) * (i / particleCount);
+        const distance = Math.random() * explosionRadius;
+
+        const particleX = x + Math.cos(angle) * distance;
+        const particleY = y + Math.sin(angle) * distance;
+
+        const color = Math.random() < 0.5 ? 'rgba(128, 128, 128, 0.5)' : 'rgba(0, 0, 0, 0.5)';
+
+        ctx.beginPath();
+        ctx.arc(particleX, particleY, particleSize, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+      }
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function updateVelocity() {
+      if (velocityMode && (isMoving || isTouching)) {
+        currentVelocity = Math.min(currentVelocity + velocityIncrement, maxVelocity);
+      } else {
+        currentVelocity = 2;
+      }
+    }
+
+    async function update() {
+      if (gameOver) return;
+
+      gameTime += 1/60;
+      timerElement.textContent = `Time: ${Math.floor(gameTime)}s`;
+
+      updateVelocity();
+
+      if (shakeTime > 0) {
+        shakeIntensity = maxShakeIntensity * (shakeTime / maxShakeTime);
+      }
+
+      // Move boys based on key presses
+      if (upPressed) {
+        boys.y -= movementSpeed;
+      }
+      if (downPressed) {
+        boys.y += movementSpeed;
+      }
+
+      // Keep boys within canvas
+      if (boys.y < 0) {
+        boys.y = 0;
+      } else if (boys.y + boys.height > canvas.height) {
+        boys.y = canvas.height - boys.height;
+      }
+
+      // Clear the canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Create gradient background
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, '#87CEEB');
+      gradient.addColorStop(0.5, '#FFA07A');
+      gradient.addColorStop(1, '#FF69B4');
+
+      // Fill the canvas with the gradient
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw boys with shaking effect
+      if (shakeTime > 0) {
+        shakeTime -= 1/60; // Assuming 60 FPS
+        if (shakeTime <= 0) {
+          shakeTime = 0;
+          shakeIntensity = 0;
+        }
+        const shakeOffsetX = (Math.random() - 0.5) * 2 * shakeIntensity;
+        const shakeOffsetY = (Math.random() - 0.5) * 2 * shakeIntensity;
+        ctx.drawImage(boysImg, boys.x + shakeOffsetX, boys.y + shakeOffsetY, boys.width, boys.height);
+      } else {
+        ctx.drawImage(boysImg, boys.x, boys.y, boys.width, boys.height);
+      }
+
+      // Draw obstacles
+      for (let index = 0; index < obstacles.length; index++) {
+        const obstacle = obstacles[index];
+        if (isMoving || isTouching) {
+          obstacle.x -= currentVelocity;
+        }
+
+        ctx.fillStyle = 'white';
+
+        // Draw top column
+        ctx.fillRect(obstacle.x, 0, obstacleWidth, obstacle.gapStartY);
+
+        // Draw bottom column
+        ctx.fillRect(obstacle.x, obstacle.gapEndY, obstacleWidth, canvas.height - obstacle.gapEndY);
+
+        // Check for collision
+        if (
+          boys.x + boys.width > obstacle.x &&
+          boys.x < obstacle.x + obstacleWidth &&
+          (boys.y < obstacle.gapStartY ||
+            boys.y + boys.height > obstacle.gapEndY) &&
+          !obstacle.hit
+        ) {
+          obstacle.hit = true;
+          boys.lives--;
+          updateLifeBar();
+
+          // Trigger shaking effect
+          shakeTime = maxShakeTime;
+          shakeIntensity = maxShakeIntensity;
+
+          // Draw explosion at the point of collision
+          const collisionX = boys.x + boys.width / 2;
+          const collisionY = boys.y < obstacle.gapStartY ? obstacle.gapStartY : obstacle.gapEndY;
+          drawExplosion(collisionX, collisionY);
+
+          if (boys.lives <= 0) {
+            gameOver = true;
+            alert("Game Over! The boys couldn't escape the room!");
+            return;
+          }
+        }
+
+        // Remove obstacles that have gone off-screen
+        if (obstacle.x + obstacleWidth < 0) {
+          obstacles.splice(index, 1);
+          index--;
+        }
+      }
+
+      // Check if we've finished all obstacles
+      if (obstacles.length === 0 || (obstacles[obstacles.length - 1].x + obstacleWidth < boys.x)) {
+  gameOver = true;
+  // Calculate score based on lives and time.
+  const score = boys.lives * 100 + Math.max(0, Math.floor(5000 - gameTime * 10)); // Adjust as needed
+  scoreText.textContent = `Poäng: ${score}`;
+  timeText.textContent = `Tid: ${Math.floor(gameTime)} sekunder`;
+  congratsWindow.style.display = 'block';
+  return;
+}
+      requestAnimationFrame(update);
+    }
+
+    // Key control handlers
+    document.addEventListener('keydown', function (e) {
+      if (e.code === 'Space') {
+        isMoving = true;
+      } else if (e.code === 'ArrowUp') {
+        upPressed = true;
+      } else if (e.code === 'ArrowDown') {
+        downPressed = true;
+      }
+    });
+
+    document.addEventListener('keyup', function (e) {
+      if (e.code === 'Space') {
+        isMoving = false;
+        if(velocityMode){
+            currentVelocity = 2;
+        }
+      } else if (e.code === 'ArrowUp') {
+        upPressed = false;
+      } else if (e.code === 'ArrowDown') {
+        downPressed = false;
+      }
+    });
+
+    // Touch event handlers
+    canvas.addEventListener('touchstart', handleTouchStart, false);
+    canvas.addEventListener('touchmove', handleTouchMove, false);
+    canvas.addEventListener('touchend', handleTouchEnd, false);
+
+    function handleTouchStart(event) {
+      event.preventDefault();
+      isTouching = true;
+      isMoving = true;
+      touchStartY = event.touches[0].clientY;
+    }
+
+    function handleTouchMove(event) {
+      event.preventDefault();
+      if (!isTouching) return;
+
+      let touchEndY = event.touches[0].clientY;
+
+      // Calculate vertical movement
+      let deltaY = touchEndY - touchStartY;
+      
+      // Move the boys directly by the delta
+      boys.y += deltaY;
+
+      // Keep boys within canvas
+      if (boys.y < 0) {
+        boys.y = 0;
+      } else if (boys.y + boys.height > canvas.height) {
+        boys.y = canvas.height - boys.height;
+      }
+
+      // Update touch start position for next move event
+      touchStartY = touchEndY;
+    }
+
+    function handleTouchEnd(event) {
+      event.preventDefault();
+      isTouching = false;
+      isMoving = false;
+      currentVelocity = 2;
+    }
+
+    // Add event listener for velocity toggle
+    velocityCheckbox.addEventListener('change', function() {
+      velocityMode = this.checked;
+      this.blur(); // This line removes focus from the checkbox after change
+    });
+
+    // Resize handler
+    window.addEventListener('resize', function() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+
+    function hideCongrats() {
+  const congratsWindow = document.getElementById('congratsWindow');
+  congratsWindow.style.display = 'none';
+}
+
+    // Start the game loop
+    update();
+    hideCongrats();
+  </script>
+</body>
+</html>

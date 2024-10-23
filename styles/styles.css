@@ -1,0 +1,17 @@
+.info-box {
+    position: absolute;
+    top: 1%;
+    left: 50%;
+    transform: translate(-50%, -1%);
+    background-color: rgb(145 204 94 / 80%);
+    padding: 10px;
+    border-radius: 5px;
+    width: 10%;
+    font-size: 14px;
+    z-index: 1000;
+    font-family: Arial, sans-serif;
+  }
+  .info-box h3 {
+    margin-top: 0;
+    margin-bottom: 5px;
+  }

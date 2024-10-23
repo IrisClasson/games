@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Meatball Invasion</title>
+    <title>Köttbullar</title>
+    <link rel="stylesheet" href="styles/styles.css">
+
     <style>
         body {
             margin: 0;
@@ -60,6 +62,12 @@
 <body>
     <div id="lifeBar"><div id="lifeBarFill"></div></div>
     <div id="timer">Time: 20:00</div>
+    <div class="info-box">
+        <h3>How to Play</h3>
+        <p>SPACE DOWN: Bilen kan köra</p>
+        <p>HÖGER/VÄNSTER: Flytta bilen</p>
+        <p>S: Toggle speed (1x/2x)</p>
+    </div>
     <canvas id="gameCanvas"></canvas>
     <div id="congratsWindow">
         <div id="congratsContent">
@@ -108,6 +116,7 @@
 
         let gameTime = 60 * 60; // 20 minutes in seconds
         let gameOver = false;
+        let gameSpeed = 1;
 
         // Add these variables for the shaking effect
         let shakeTime = 0;
@@ -177,10 +186,16 @@
                 const color = 'brown';
 
                 ctx.beginPath();
-                  ctx.arc(particleX, particleY, particleSize, 0, Math.PI * 2);
+                ctx.arc(particleX, particleY, particleSize, 0, Math.PI * 2);
                 ctx.fillStyle = color;
                 ctx.fill();
             }
+        }
+
+        function updateSpeedDisplay() {
+            ctx.fillStyle = 'white';
+            ctx.font = '20px Arial';
+            ctx.fillText(`Speed: ${gameSpeed}x`, 10, 60);
         }
 
         function gameLoop() {
@@ -201,8 +216,8 @@
 
             // Move car only if space is held down
             if (car.isMoving) {
-                if (keys.ArrowLeft && car.x > 0) car.x -= car.speed;
-                if (keys.ArrowRight && car.x < canvas.width - car.width) car.x += car.speed;
+                if (keys.ArrowLeft && car.x > 0) car.x -= car.speed * gameSpeed;
+                if (keys.ArrowRight && car.x < canvas.width - car.width) car.x += car.speed * gameSpeed;
             }
 
             // Draw car
@@ -211,7 +226,7 @@
             // Update and draw meatballs
             for (let i = meatballs.length - 1; i >= 0; i--) {
                 const meatball = meatballs[i];
-                meatball.y += meatballSpeed;
+                meatball.y += meatballSpeed * gameSpeed;
 
                 // Check collision with car
                 if (
@@ -253,11 +268,13 @@
             }
 
             // Spawn new meatballs
-            if (Math.random() < 0.02) spawnMeatball();
+            if (Math.random() < 0.01 * gameSpeed) spawnMeatball();
 
             // Update game time
-            gameTime--;
+            gameTime -= gameSpeed;
             updateTimer();
+
+            updateSpeedDisplay();
 
             if (gameTime <= 0) {
                 endGame("Congratulations! You survived the meatball invasion!");
@@ -281,6 +298,9 @@
             keys[e.code] = true;
             if (e.code === 'Space') {
                 car.isMoving = true;
+            }
+            if (e.code === 'KeyS') {
+                gameSpeed = gameSpeed === 1 ? 2 : 1; // Toggle between normal and fast speed
             }
         });
         document.addEventListener('keyup', (e) => {
