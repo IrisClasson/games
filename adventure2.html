@@ -65,7 +65,7 @@
         canvas.height = window.innerHeight;
 
         // Game constants
-        const VELOCITY_SCALE = 0.23;
+        const VELOCITY_SCALE = 0.22;
         const ROTATION_SPEED = 0.1;
 
         // Load images
@@ -114,7 +114,6 @@
         let arrowDownPressed = false;
         let gameStartTime;
         let gameEndTime;
-        let speed = 1; // New variable for speed
 
         function calculateVelocity(distance, angleDegrees) {
             const g = 9.81;
@@ -132,12 +131,11 @@
 
         function launchBoys() {
             boys.launched = true;
-            const velocity = power * VELOCITY_SCALE * speed; // Apply speed to velocity
+            const velocity = power * VELOCITY_SCALE;
             boys.velocity.x = Math.cos(angle * Math.PI / 180) * velocity;
             boys.velocity.y = -Math.sin(angle * Math.PI / 180) * velocity;
             pulling = false;
             power = 0;
-            gameStartTime = Date.now();
         }
 
         // Event listeners
@@ -154,13 +152,12 @@
                 arrowUpPressed = true;
             } else if (e.code === 'ArrowDown') {
                 arrowDownPressed = true;
-            } else if (e.code === 'KeyS') { // New key handler for speed toggle
-                speed = speed === 1 ? 2 : 1;
             }
         }
 
         function handleKeyUp(e) {
             if (e.code === 'Space' && !boys.launched) {
+                boys.velocity = { x: 0, y: 0 }; 
                 launchBoys();
             } else if (e.code === 'ArrowUp') {
                 arrowUpPressed = false;
@@ -195,6 +192,7 @@
         function handleTouchEnd(event) {
             event.preventDefault();
             if (!boys.launched && pulling) {
+                boys.velocity = { x: 0, y: 0 }; 
                 launchBoys();
             }
             pulling = false;
@@ -225,10 +223,10 @@
             maxPower = calculateRequiredPower();
 
             if (boys.launched) {
-                boys.x += boys.velocity.x * speed; // Apply speed to x movement
-                boys.y += boys.velocity.y * speed; // Apply speed to y movement
-                boys.velocity.y += 0.5 * speed; // Apply speed to gravity
-                boys.rotation += ROTATION_SPEED * speed; // Apply speed to rotation
+                boys.x += boys.velocity.x;
+                boys.y += boys.velocity.y;
+                boys.velocity.y += 0.5;
+                boys.rotation += ROTATION_SPEED;
 
                 const boysCenterX = boys.x + boys.width / 2;
                 const boysCenterY = boys.y + boys.height / 2;
@@ -248,6 +246,7 @@
                     resetGame();
                 }
             } else {
+                boys.velocity = { x: 0, y: 0 }; 
                 if (pulling) {
                     power = Math.min(power + 1, maxPower);
                 }
@@ -300,17 +299,12 @@
             ctx.fillStyle = 'black';
             ctx.font = '16px Arial';
             ctx.fillText(`Angle: ${Math.round(angle)}°`, 20, 60);
-            ctx.fillText(`Speed: ${speed}x`, 20, 80); // Display current speed
 
             requestAnimationFrame(update);
         }
 
         function showCongrats() {
-            const timeTaken = (gameEndTime - gameStartTime) / 1000; // Convert to seconds
-            const score = Math.max(0, Math.floor(1000 - timeTaken * 10)); // Example scoring system
 
-            document.getElementById('scoreText').textContent = `Poäng: ${score}`;
-            document.getElementById('timeText').textContent = `Tid: ${timeTaken.toFixed(2)} sekunder`;
             document.getElementById('congratsWindow').style.display = 'block';
         }
 
@@ -319,24 +313,8 @@
         }
 
         function resetGame() {
-            boys.x = startBed.x + startBed.width / 2 - 90;
-            boys.y = startBed.y - 50;
-            boys.velocity = { x: 0, y: 0 };
-            boys.launched = false;
-            boys.rotation = 0;
-            power = 0;
-            angle = 45;
-            pulling = false;
-            arrowUpPressed = false;
-            arrowDownPressed = false;
-            speed = 1; // Reset speed to normal
-            hideCongrats();
-            gameStartTime = null;
-            gameEndTime = null;
-            
-            // Ensure the game loop continues
-            requestAnimationFrame(update);
-        }
+            location.reload();
+}
 
         let imagesLoaded = 0;
         function imageLoaded() {

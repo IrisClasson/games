@@ -62,15 +62,15 @@
       font-weight: bold;
     }
     #congratsWindow {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    z-index: 1000;
-  }
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      z-index: 1000;
+    }
     #congratsContent {
       position: absolute;
       top: 50%;
@@ -99,6 +99,7 @@
         <h3>How to Play</h3>
         <p>SPACE: Move forward</p>
         <p>UP/DOWN: Move up/down</p>
+        <p>S: Toggle speed (1x/2x)</p>
     </div>
   <div id="lifeBar"><div id="lifeBarFill"></div></div>
   <div id="velocityToggle">
@@ -153,7 +154,8 @@
       y: canvas.height / 2,
       width: boysWidth,
       height: boysHeight,
-      lives: 10
+      lives: 10,
+      speed: 5
     };
 
     let obstacles = [];
@@ -184,6 +186,9 @@
     let currentVelocity = 2;
     const maxVelocity = 10;
     const velocityIncrement = 0.1;
+
+    // New variable for game speed
+    let gameSpeed = 1;
 
     async function startGame(length) {
       menu.style.display = 'none';
@@ -256,6 +261,12 @@
       }
     }
 
+    function updateSpeedDisplay() {
+      ctx.fillStyle = 'white';
+      ctx.font = '20px Arial';
+      ctx.fillText(`Speed: ${gameSpeed}x`, 10, 60);
+    }
+
     function sleep(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
     }
@@ -269,121 +280,109 @@
     }
 
     async function update() {
-      if (gameOver) return;
+  if (gameOver) return;
 
-      gameTime += 1/60;
-      timerElement.textContent = `Time: ${Math.floor(gameTime)}s`;
+  gameTime += 1/60 * gameSpeed;
+  timerElement.textContent = `Time: ${Math.floor(gameTime)}s`;
 
-      updateVelocity();
+  updateVelocity();
 
-      if (shakeTime > 0) {
-        shakeIntensity = maxShakeIntensity * (shakeTime / maxShakeTime);
-      }
+  if (shakeTime > 0) {
+    shakeIntensity = maxShakeIntensity * (shakeTime / maxShakeTime);
+  }
 
-      // Move boys based on key presses
-      if (upPressed) {
-        boys.y -= movementSpeed;
-      }
-      if (downPressed) {
-        boys.y += movementSpeed;
-      }
+  // Clear the canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  // Create gradient background
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  gradient.addColorStop(0, '#87CEEB');
+  gradient.addColorStop(0.5, '#FFA07A');
+  gradient.addColorStop(1, '#FF69B4');
 
-      // Keep boys within canvas
-      if (boys.y < 0) {
-        boys.y = 0;
-      } else if (boys.y + boys.height > canvas.height) {
-        boys.y = canvas.height - boys.height;
-      }
+  // Fill the canvas with the gradient
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Clear the canvas
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      // Create gradient background
-      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      gradient.addColorStop(0, '#87CEEB');
-      gradient.addColorStop(0.5, '#FFA07A');
-      gradient.addColorStop(1, '#FF69B4');
-
-      // Fill the canvas with the gradient
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Draw boys with shaking effect
-      if (shakeTime > 0) {
-        shakeTime -= 1/60; // Assuming 60 FPS
-        if (shakeTime <= 0) {
-          shakeTime = 0;
-          shakeIntensity = 0;
-        }
-        const shakeOffsetX = (Math.random() - 0.5) * 2 * shakeIntensity;
-        const shakeOffsetY = (Math.random() - 0.5) * 2 * shakeIntensity;
-        ctx.drawImage(boysImg, boys.x + shakeOffsetX, boys.y + shakeOffsetY, boys.width, boys.height);
-      } else {
-        ctx.drawImage(boysImg, boys.x, boys.y, boys.width, boys.height);
-      }
-
-      // Draw obstacles
-      for (let index = 0; index < obstacles.length; index++) {
-        const obstacle = obstacles[index];
-        if (isMoving || isTouching) {
-          obstacle.x -= currentVelocity;
-        }
-
-        ctx.fillStyle = 'white';
-
-        // Draw top column
-        ctx.fillRect(obstacle.x, 0, obstacleWidth, obstacle.gapStartY);
-
-        // Draw bottom column
-        ctx.fillRect(obstacle.x, obstacle.gapEndY, obstacleWidth, canvas.height - obstacle.gapEndY);
-
-        // Check for collision
-        if (
-          boys.x + boys.width > obstacle.x &&
-          boys.x < obstacle.x + obstacleWidth &&
-          (boys.y < obstacle.gapStartY ||
-            boys.y + boys.height > obstacle.gapEndY) &&
-          !obstacle.hit
-        ) {
-          obstacle.hit = true;
-          boys.lives--;
-          updateLifeBar();
-
-          // Trigger shaking effect
-          shakeTime = maxShakeTime;
-          shakeIntensity = maxShakeIntensity;
-
-          // Draw explosion at the point of collision
-          const collisionX = boys.x + boys.width / 2;
-          const collisionY = boys.y < obstacle.gapStartY ? obstacle.gapStartY : obstacle.gapEndY;
-          drawExplosion(collisionX, collisionY);
-
-          if (boys.lives <= 0) {
-            gameOver = true;
-            alert("Game Over! The boys couldn't escape the room!");
-            return;
-          }
-        }
-
-        // Remove obstacles that have gone off-screen
-        if (obstacle.x + obstacleWidth < 0) {
-          obstacles.splice(index, 1);
-          index--;
-        }
-      }
-
-      // Check if we've finished all obstacles
-      if (obstacles.length === 0 || (obstacles[obstacles.length - 1].x + obstacleWidth < boys.x)) {
-  gameOver = true;
-  // Calculate score based on lives and time.
-  const score = boys.lives * 100 + Math.max(0, Math.floor(5000 - gameTime * 10)); // Adjust as needed
-  scoreText.textContent = `Poäng: ${score}`;
-  timeText.textContent = `Tid: ${Math.floor(gameTime)} sekunder`;
-  congratsWindow.style.display = 'block';
-  return;
-}
-      requestAnimationFrame(update);
+  // Draw boys with shaking effect
+  if (shakeTime > 0) {
+    shakeTime -= 1/60; // Assuming 60 FPS
+    if (shakeTime <= 0) {
+      shakeTime = 0;
+      shakeIntensity = 0;
     }
+    const shakeOffsetX = (Math.random() - 0.5) * 2 * shakeIntensity;
+    const shakeOffsetY = (Math.random() - 0.5) * 2 * shakeIntensity;
+    ctx.drawImage(boysImg, boys.x + shakeOffsetX, boys.y + shakeOffsetY, boys.width, boys.height);
+  } else {
+    ctx.drawImage(boysImg, boys.x, boys.y, boys.width, boys.height);
+  }
+
+  // Move obstacles only if space is pressed or touch is active
+  if (isMoving || isTouching) {
+    for (let index = 0; index < obstacles.length; index++) {
+      const obstacle = obstacles[index];
+      obstacle.x -= currentVelocity * gameSpeed;
+    }
+  }
+
+  // Draw obstacles (always, regardless of movement)
+  for (let index = 0; index < obstacles.length; index++) {
+    const obstacle = obstacles[index];
+    ctx.fillStyle = 'white';
+    ctx.fillRect(obstacle.x, 0, obstacleWidth, obstacle.gapStartY);
+    ctx.fillRect(obstacle.x, obstacle.gapEndY, obstacleWidth, canvas.height - obstacle.gapEndY);
+
+    // Check for collision
+    if (!obstacle.hit &&
+        boys.x < obstacle.x + obstacleWidth &&
+        boys.x + boys.width > obstacle.x &&
+        (boys.y < obstacle.gapStartY || boys.y + boys.height > obstacle.gapEndY)) {
+      obstacle.hit = true;
+      boys.lives--;
+      updateLifeBar();
+      shakeTime = maxShakeTime;
+
+      const collisionX = boys.x + boys.width / 2;
+      const collisionY = boys.y < obstacle.gapStartY ? obstacle.gapStartY : obstacle.gapEndY;
+      drawExplosion(collisionX, collisionY);
+
+      if (boys.lives <= 0) {
+        gameOver = true;
+        alert("Game Over! The boys couldn't escape the room!");
+        return;
+      }
+    }
+
+    // Remove obstacles that have gone off-screen
+    if (obstacle.x + obstacleWidth < 0) {
+      obstacles.splice(index, 1);
+      index--;
+    }
+  }
+
+  // Move boys based on key presses
+  if (upPressed && boys.y > 0) {
+    boys.y -= movementSpeed * gameSpeed;
+  }
+  if (downPressed && boys.y + boys.height < canvas.height) {
+    boys.y += movementSpeed * gameSpeed;
+  }
+
+  // Check if we've finished all obstacles
+  if (obstacles.length === 0 || (obstacles[obstacles.length - 1].x + obstacleWidth < boys.x)) {
+    gameOver = true;
+    // Calculate score based on lives and time.
+    const score = boys.lives * 100 + Math.max(0, Math.floor(5000 - gameTime * 10)); // Adjust as needed
+    scoreText.textContent = `Poäng: ${score}`;
+    timeText.textContent = `Tid: ${Math.floor(gameTime)} sekunder`;
+    congratsWindow.style.display = 'block';
+    return;
+  }
+
+  updateSpeedDisplay();
+  requestAnimationFrame(update);
+}
 
     // Key control handlers
     document.addEventListener('keydown', function (e) {
@@ -393,6 +392,8 @@
         upPressed = true;
       } else if (e.code === 'ArrowDown') {
         downPressed = true;
+      } else if (e.code === 'KeyS') {
+        gameSpeed = gameSpeed === 1 ? 2 : 1; // Toggle between normal and fast speed
       }
     });
 
@@ -464,9 +465,9 @@
     });
 
     function hideCongrats() {
-  const congratsWindow = document.getElementById('congratsWindow');
-  congratsWindow.style.display = 'none';
-}
+      const congratsWindow = document.getElementById('congratsWindow');
+      congratsWindow.style.display = 'none';
+    }
 
     // Start the game loop
     update();
