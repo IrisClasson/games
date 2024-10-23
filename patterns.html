@@ -5,22 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Design Pattern Game</title>
     <style>
-    body {
-      background-image: url('images/proxy.jpg');
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      background-attachment: fixed;
-      margin: 0;
-      overflow: hidden;
-      font-family: Arial, sans-serif;
-      height: 100vh;
-      width: 100vw;
-    }
         body {
+            background-image: url('images/proxy.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
             margin: 0;
             overflow: hidden;
             font-family: Arial, sans-serif;
+            height: 100vh;
+            width: 100vw;
         }
         #gameCanvas {
             display: block;
@@ -90,53 +85,54 @@
         ];
 
         function createBlock() {
-    const isBad = Math.random() < 0.2; // 20% chance of bad pattern
-    const text = isBad ? badPatterns[Math.floor(Math.random() * badPatterns.length)] :
-                         goodPatterns[Math.floor(Math.random() * goodPatterns.length)];
-    const blockWidth = Math.min(canvas.width * 0.225, 300); // 22.5% of screen width (1.5 * 15%), max 300px (1.5 * 200px)
-    const blockHeight = blockWidth * 0.5; // Maintain aspect ratio
-    return {
-        x: Math.random() * (canvas.width - blockWidth),
-        y: -blockHeight,
-        width: blockWidth,
-        height: blockHeight,
-        text: text,
-        isBad: isBad,
-        speed: Math.random() * 2 + 1
-    };
-}
+            const isBad = Math.random() < 0.2; // 20% chance of bad pattern
+            const text = isBad ? badPatterns[Math.floor(Math.random() * badPatterns.length)] :
+                                 goodPatterns[Math.floor(Math.random() * goodPatterns.length)];
+            const blockWidth = Math.min(200, Math.max(150, canvas.width * 0.2)); // Between 150px and 200px, or 20% of screen width
+            const blockHeight = blockWidth * 0.5; // Maintain aspect ratio
+            return {
+                x: Math.random() * (canvas.width - blockWidth),
+                y: -blockHeight,
+                width: blockWidth,
+                height: blockHeight,
+                text: text,
+                isBad: isBad,
+                speed: Math.random() * 2 + 1
+            };
+        }
 
-function drawBlock(block) {
-    const radius = Math.min(7.5, block.width * 0.05);
+        function drawBlock(block) {
+            const radius = Math.min(7.5, block.width * 0.05);
 
-    ctx.beginPath();
-    ctx.moveTo(block.x + radius, block.y);
-    ctx.lineTo(block.x + block.width - radius, block.y);
-    ctx.quadraticCurveTo(block.x + block.width, block.y, block.x + block.width, block.y + radius);
-    ctx.lineTo(block.x + block.width, block.y + block.height - radius);
-    ctx.quadraticCurveTo(block.x + block.width, block.y + block.height, block.x + block.width - radius, block.y + block.height);
-    ctx.lineTo(block.x + radius, block.y + block.height);
-    ctx.quadraticCurveTo(block.x, block.y + block.height, block.x, block.y + block.height - radius);
-    ctx.lineTo(block.x, block.y + radius);
-    ctx.quadraticCurveTo(block.x, block.y, block.x + radius, block.y);
-    ctx.closePath();
+            ctx.beginPath();
+            ctx.moveTo(block.x + radius, block.y);
+            ctx.lineTo(block.x + block.width - radius, block.y);
+            ctx.quadraticCurveTo(block.x + block.width, block.y, block.x + block.width, block.y + radius);
+            ctx.lineTo(block.x + block.width, block.y + block.height - radius);
+            ctx.quadraticCurveTo(block.x + block.width, block.y + block.height, block.x + block.width - radius, block.y + block.height);
+            ctx.lineTo(block.x + radius, block.y + block.height);
+            ctx.quadraticCurveTo(block.x, block.y + block.height, block.x, block.y + block.height - radius);
+            ctx.lineTo(block.x, block.y + radius);
+            ctx.quadraticCurveTo(block.x, block.y, block.x + radius, block.y);
+            ctx.closePath();
 
-    ctx.fillStyle = block.isBad ? '#8a1515' : '#8a5115';
-    ctx.fill();
+            ctx.fillStyle = block.isBad ? '#8a1515' : '#8a5115';
+            ctx.fill();
 
-    ctx.fillStyle = 'white';
-    const fontSize = Math.max(18, Math.floor(block.width * 0.1)); // Minimum 18px, or 10% of block width
-    ctx.font = `${fontSize}px Arial`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    const words = block.text.split(' ');
-    const lineHeight = fontSize * 1.1; // Increased line height for better spacing
-    let y = block.y + block.height / 2 - (words.length - 1) * lineHeight / 2;
-    words.forEach(word => {
-        ctx.fillText(word, block.x + block.width / 2, y);
-        y += lineHeight;
-    });
-}
+            ctx.fillStyle = 'white';
+            const fontSize = Math.max(14, Math.min(18, Math.floor(block.width * 0.09))); // Between 14px and 18px
+            ctx.font = `${fontSize}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const words = block.text.split(' ');
+            const lineHeight = fontSize * 1.1; // Increased line height for better spacing
+            let y = block.y + block.height / 2 - (words.length - 1) * lineHeight / 2;
+            words.forEach(word => {
+                ctx.fillText(word, block.x + block.width / 2, y);
+                y += lineHeight;
+            });
+        }
+
         function updateGame() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -198,6 +194,11 @@ function drawBlock(block) {
                     }
                 }
             });
+        });
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
         });
 
         startGame();
