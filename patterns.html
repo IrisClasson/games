@@ -54,7 +54,7 @@
     <div id="gameOver">
         <h2>Game Over!</h2>
         <p id="finalScore"></p>
-        <button onclick="startGame()">Play Again</button>
+        <button onclick="location.reload();">Play Again</button>
     </div>
 
     <script>
@@ -107,7 +107,7 @@
 }
 
 function drawBlock(block) {
-    const radius = Math.min(7.5, block.width * 0.05); // Radius for rounded corners, max 7.5px or 5% of width
+    const radius = Math.min(7.5, block.width * 0.05);
 
     ctx.beginPath();
     ctx.moveTo(block.x + radius, block.y);
