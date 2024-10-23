@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Design Pattern Game</title>
+    <style>
+    body {
+      background-image: url('images/proxy.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      margin: 0;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+      height: 100vh;
+      width: 100vw;
+    }
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        #gameCanvas {
+            display: block;
+        }
+        #score, #timer {
+            position: absolute;
+            top: 10px;
+            font-size: 24px;
+            color: white;
+        }
+        #score { left: 10px; background-color: rgb(87, 58, 28); padding: 5px; border-radius: 5px; }
+        #timer { right: 10px; background-color: rgb(87, 58, 28); padding: 5px; border-radius: 5px;}
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="score">Score: 0</div>
+    <div id="timer">Time: 60s</div>
+    <div id="gameOver">
+        <h2>Game Over!</h2>
+        <p id="finalScore"></p>
+        <button onclick="startGame()">Play Again</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const timerElement = document.getElementById('timer');
+        const gameOverElement = document.getElementById('gameOver');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let score = 0;
+        let blocks = [];
+        let gameTime = 60;
+        let gameInterval;
+
+        const goodPatterns = [
+            "Abstract Factory", "Adapter", "Bridge", "Builder", "Chain of Responsibility",
+            "Command", "Composite", "DAO", "Decorator", "Dependency Injection",
+            "Facade", "Factory Method", "Flyweight", "Interpreter", "Iterator",
+            "Lazy Initialization", "Mediator", "Memento", "Null Object", "Object Pool",
+            "Observer", "Prototype", "Proxy", "Repository", "Service Locator",
+            "Singleton", "Specification", "State", "Strategy", "Template Method",
+            "Visitor", "MVC", "MVP", "MVVM", "Intercepting Filter",
+            "Front Controller", "Page Controller", "View Helper", "Module", "Proxy",
+            "Provider Pattern", "Options Pattern"
+        ];
+
+        const badPatterns = [
+            "God object", "Spegatti code", "Code-behind", "Magic string", "Magic number",
+            "Shotgun surgery", "Silver bullet", "Singleton overuse", "Golden hammer"
+        ];
+
+        function createBlock() {
+    const isBad = Math.random() < 0.2; // 20% chance of bad pattern
+    const text = isBad ? badPatterns[Math.floor(Math.random() * badPatterns.length)] :
+                         goodPatterns[Math.floor(Math.random() * goodPatterns.length)];
+    const blockWidth = Math.min(canvas.width * 0.225, 300); // 22.5% of screen width (1.5 * 15%), max 300px (1.5 * 200px)
+    const blockHeight = blockWidth * 0.5; // Maintain aspect ratio
+    return {
+        x: Math.random() * (canvas.width - blockWidth),
+        y: -blockHeight,
+        width: blockWidth,
+        height: blockHeight,
+        text: text,
+        isBad: isBad,
+        speed: Math.random() * 2 + 1
+    };
+}
+
+function drawBlock(block) {
+    const radius = Math.min(7.5, block.width * 0.05); // Radius for rounded corners, max 7.5px or 5% of width
+
+    ctx.beginPath();
+    ctx.moveTo(block.x + radius, block.y);
+    ctx.lineTo(block.x + block.width - radius, block.y);
+    ctx.quadraticCurveTo(block.x + block.width, block.y, block.x + block.width, block.y + radius);
+    ctx.lineTo(block.x + block.width, block.y + block.height - radius);
+    ctx.quadraticCurveTo(block.x + block.width, block.y + block.height, block.x + block.width - radius, block.y + block.height);
+    ctx.lineTo(block.x + radius, block.y + block.height);
+    ctx.quadraticCurveTo(block.x, block.y + block.height, block.x, block.y + block.height - radius);
+    ctx.lineTo(block.x, block.y + radius);
+    ctx.quadraticCurveTo(block.x, block.y, block.x + radius, block.y);
+    ctx.closePath();
+
+    ctx.fillStyle = block.isBad ? '#8a1515' : '#8a5115';
+    ctx.fill();
+
+    ctx.fillStyle = 'white';
+    const fontSize = Math.max(18, Math.floor(block.width * 0.1)); // Minimum 18px, or 10% of block width
+    ctx.font = `${fontSize}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const words = block.text.split(' ');
+    const lineHeight = fontSize * 1.1; // Increased line height for better spacing
+    let y = block.y + block.height / 2 - (words.length - 1) * lineHeight / 2;
+    words.forEach(word => {
+        ctx.fillText(word, block.x + block.width / 2, y);
+        y += lineHeight;
+    });
+}
+        function updateGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            blocks.forEach((block, index) => {
+                block.y += block.speed;
+                drawBlock(block);
+
+                if (block.y > canvas.height) {
+                    blocks.splice(index, 1);
+                }
+            });
+
+            if (Math.random() < 0.02) {
+                blocks.push(createBlock());
+            }
+
+            scoreElement.textContent = `Score: ${score}`;
+            timerElement.textContent = `Time: ${gameTime}s`;
+
+            requestAnimationFrame(updateGame);
+        }
+
+        function startGame() {
+            score = 0;
+            blocks = [];
+            gameTime = 60;
+            gameOverElement.style.display = 'none';
+
+            clearInterval(gameInterval);
+            gameInterval = setInterval(() => {
+                gameTime--;
+                if (gameTime <= 0) {
+                    endGame();
+                }
+            }, 1000);
+
+            updateGame();
+        }
+
+        function endGame() {
+            clearInterval(gameInterval);
+            gameOverElement.style.display = 'block';
+            document.getElementById('finalScore').textContent = `Your final score: ${score}`;
+        }
+
+        canvas.addEventListener('click', (event) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+
+            blocks.forEach((block, index) => {
+                if (x > block.x && x < block.x + block.width &&
+                    y > block.y && y < block.y + block.height) {
+                    if (block.isBad) {
+                        endGame();
+                    } else {
+                        score++;
+                        blocks.splice(index, 1);
+                    }
+                }
+            });
+        });
+
+        startGame();
+    </script>
+</body>
+</html>
