@@ -45,6 +45,24 @@
         label {
             color: black;
         }
+        #zoomControl {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 10px;
+            border-radius: 10px;
+        }
+        #zoomSlider {
+            writing-mode: bt-lr;
+            -webkit-appearance: slider-vertical;
+            width: 8px;
+            height: 175px;
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
 </head>
@@ -58,6 +76,10 @@
         <input type="range" id="opacitySlider" min="0" max="1" step="0.1" value="0.5">
         <label for="opacitySlider">Overlay Opacity: <span id="opacityValue">0.5</span></label>
     </div>
+    <div id="zoomControl">
+        <input type="range" id="zoomSlider" min="0.5" max="3" step="0.1" value="1" orient="vertical">
+        <label for="zoomSlider">Zoom</label>
+    </div>
 
     <script>
         const cameraFeed = document.getElementById('cameraFeed');
@@ -65,6 +87,8 @@
         const imageUpload = document.getElementById('imageUpload');
         const opacitySlider = document.getElementById('opacitySlider');
         const opacityValue = document.getElementById('opacityValue');
+        const zoomSlider = document.getElementById('zoomSlider');
+        const container = document.getElementById('container');
 
         let currentScale = 1;
         let currentPanX = 0;
@@ -84,10 +108,28 @@
                 };
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 cameraFeed.srcObject = stream;
+                
+                // Wait for the video to be loaded
+                cameraFeed.onloadedmetadata = () => {
+                    fitCameraToScreen();
+                };
             } catch (err) {
                 console.error("Error accessing camera:", err);
                 alert("Unable to access the camera. Please ensure you have given permission and try again.");
             }
+        }
+
+        function fitCameraToScreen() {
+            const { videoWidth, videoHeight } = cameraFeed;
+            const { width, height } = container.getBoundingClientRect();
+            const widthRatio = width / videoWidth;
+            const heightRatio = height / videoHeight;
+            const ratio = Math.min(widthRatio, heightRatio);
+            
+            cameraFeed.style.width = `${videoWidth * ratio}px`;
+            cameraFeed.style.height = `${videoHeight * ratio}px`;
+            cameraFeed.style.left = `${(width - videoWidth * ratio) / 2}px`;
+            cameraFeed.style.top = `${(height - videoHeight * ratio) / 2}px`;
         }
 
         // Handle image upload
@@ -115,8 +157,14 @@
             opacityValue.textContent = opacity;
         }
 
+        // Handle zoom changes
+        zoomSlider.addEventListener('input', () => {
+            currentScale = parseFloat(zoomSlider.value);
+            updateCameraTransform();
+        });
+
         function setupPinchZoom() {
-            const hammer = new Hammer(imageOverlay);
+            const hammer = new Hammer(container);
             hammer.get('pinch').set({ enable: true });
             hammer.get('pan').set({ direction: Hammer.DIRECTION_ALL });
 
@@ -126,10 +174,11 @@
             });
 
             hammer.on('pinch', (e) => {
-                currentScale = Math.max(1, Math.min(e.scale * currentScale, 5));
+                currentScale = Math.max(0.5, Math.min(e.scale * currentScale, 3));
+                zoomSlider.value = currentScale;
                 currentPanX = lastPanX + e.deltaX;
                 currentPanY = lastPanY + e.deltaY;
-                updateImageTransform();
+                updateCameraTransform();
             });
 
             hammer.on('pinchend', () => {
@@ -145,7 +194,7 @@
             hammer.on('pan', (e) => {
                 currentPanX = lastPanX + e.deltaX / currentScale;
                 currentPanY = lastPanY + e.deltaY / currentScale;
-                updateImageTransform();
+                updateCameraTransform();
             });
 
             hammer.on('panend', () => {
@@ -154,8 +203,11 @@
             });
         }
 
-        function updateImageTransform() {
-            imageOverlay.style.transform = `translate(${currentPanX}px, ${currentPanY}px) scale(${currentScale})`;
+        function updateCameraTransform() {
+            const translateX = currentPanX / currentScale;
+            const translateY = currentPanY / currentScale;
+            cameraFeed.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentScale})`;
+            imageOverlay.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentScale})`;
         }
 
         function resetTransform() {
@@ -164,17 +216,18 @@
             currentPanY = 0;
             lastPanX = 0;
             lastPanY = 0;
-            updateImageTransform();
+            zoomSlider.value = 1;
+            updateCameraTransform();
         }
 
         // Start the camera when the page loads
         startCamera();
 
         // Handle window resize
-        window.addEventListener('resize', () => {
-            cameraFeed.style.width = window.innerWidth + 'px';
-            cameraFeed.style.height = window.innerHeight + 'px';
-        });
+        window.addEventListener('resize', fitCameraToScreen);
+
+        // Setup pinch zoom after the page loads
+        window.addEventListener('load', setupPinchZoom);
     </script>
 </body>
 </html>
