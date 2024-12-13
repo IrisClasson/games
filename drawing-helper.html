@@ -77,8 +77,8 @@
         <label for="opacitySlider">Overlay Opacity: <span id="opacityValue">0.5</span></label>
     </div>
     <div id="zoomControl">
-        <input type="range" id="zoomSlider" min="0.5" max="3" step="0.1" value="1" orient="vertical">
-        <label for="zoomSlider">Zoom</label>
+        <input type="range" id="zoomSlider" min="1" max="5" step="0.1" value="1" orient="vertical">
+        <label for="zoomSlider">Camera Zoom</label>
     </div>
 
     <script>
@@ -96,17 +96,21 @@
         let lastPanX = 0;
         let lastPanY = 0;
 
+        let stream;
+
         // Start camera feed
         async function startCamera() {
             try {
                 const constraints = {
                     video: {
                         facingMode: 'environment',
-                        width: { ideal: window.innerWidth },
-                        height: { ideal: window.innerHeight }
+                        width: { ideal: window.innerHeight },
+                        height: { ideal: window.innerWidth },
+                        aspectRatio: { ideal: 9/16 },
+                        zoom: 1
                     }
                 };
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
                 cameraFeed.srcObject = stream;
                 
                 // Wait for the video to be loaded
@@ -122,14 +126,15 @@
         function fitCameraToScreen() {
             const { videoWidth, videoHeight } = cameraFeed;
             const { width, height } = container.getBoundingClientRect();
-            const widthRatio = width / videoWidth;
-            const heightRatio = height / videoHeight;
-            const ratio = Math.min(widthRatio, heightRatio);
+            const widthRatio = width / videoHeight;
+            const heightRatio = height / videoWidth;
+            const ratio = Math.max(widthRatio, heightRatio);
             
-            cameraFeed.style.width = `${videoWidth * ratio}px`;
-            cameraFeed.style.height = `${videoHeight * ratio}px`;
-            cameraFeed.style.left = `${(width - videoWidth * ratio) / 2}px`;
-            cameraFeed.style.top = `${(height - videoHeight * ratio) / 2}px`;
+            cameraFeed.style.width = `${videoHeight * ratio}px`;
+            cameraFeed.style.height = `${videoWidth * ratio}px`;
+            cameraFeed.style.left = `${(width - videoHeight * ratio) / 2}px`;
+            cameraFeed.style.top = `${(height - videoWidth * ratio) / 2}px`;
+            cameraFeed.style.transform = 'rotate(90deg)';
         }
 
         // Handle image upload
@@ -157,11 +162,23 @@
             opacityValue.textContent = opacity;
         }
 
-        // Handle zoom changes
+        // Handle camera zoom changes
         zoomSlider.addEventListener('input', () => {
-            currentScale = parseFloat(zoomSlider.value);
-            updateImageTransform();
+            const zoomValue = parseFloat(zoomSlider.value);
+            updateCameraZoom(zoomValue);
         });
+
+        async function updateCameraZoom(zoomValue) {
+            if (stream) {
+                const videoTrack = stream.getVideoTracks()[0];
+                const capabilities = videoTrack.getCapabilities();
+                if (capabilities.zoom) {
+                    await videoTrack.applyConstraints({ advanced: [{ zoom: zoomValue }] });
+                } else {
+                    console.log("Zoom is not supported by this device");
+                }
+            }
+        }
 
         function setupPinchZoom() {
             const hammer = new Hammer(imageOverlay);
@@ -175,7 +192,6 @@
 
             hammer.on('pinch', (e) => {
                 currentScale = Math.max(0.5, Math.min(e.scale * currentScale, 3));
-                zoomSlider.value = currentScale;
                 currentPanX = lastPanX + e.deltaX;
                 currentPanY = lastPanY + e.deltaY;
                 updateImageTransform();
@@ -205,7 +221,6 @@
             currentPanY = 0;
             lastPanX = 0;
             lastPanY = 0;
-            zoomSlider.value = 1;
             updateImageTransform();
         }
 
