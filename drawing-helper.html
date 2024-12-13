@@ -141,8 +141,8 @@
                     imageOverlay.src = event.target.result;
                     imageOverlay.style.display = 'block';
                     updateOpacity();
-                    setupPinchZoom();
                     resetTransform();
+                    setupPinchZoom(); // Setup pinch zoom after image is loaded
                 };
                 reader.readAsDataURL(file);
             }
@@ -160,15 +160,15 @@
         // Handle zoom changes
         zoomSlider.addEventListener('input', () => {
             currentScale = parseFloat(zoomSlider.value);
-            updateCameraTransform();
+            updateImageTransform();
         });
 
         function setupPinchZoom() {
-            const hammer = new Hammer(container);
+            const hammer = new Hammer(imageOverlay);
             hammer.get('pinch').set({ enable: true });
             hammer.get('pan').set({ direction: Hammer.DIRECTION_ALL });
 
-            hammer.on('pinchstart', () => {
+            hammer.on('pinchstart panstart', () => {
                 lastPanX = currentPanX;
                 lastPanY = currentPanY;
             });
@@ -178,35 +178,24 @@
                 zoomSlider.value = currentScale;
                 currentPanX = lastPanX + e.deltaX;
                 currentPanY = lastPanY + e.deltaY;
-                updateCameraTransform();
-            });
-
-            hammer.on('pinchend', () => {
-                lastPanX = currentPanX;
-                lastPanY = currentPanY;
-            });
-
-            hammer.on('panstart', () => {
-                lastPanX = currentPanX;
-                lastPanY = currentPanY;
+                updateImageTransform();
             });
 
             hammer.on('pan', (e) => {
                 currentPanX = lastPanX + e.deltaX / currentScale;
                 currentPanY = lastPanY + e.deltaY / currentScale;
-                updateCameraTransform();
+                updateImageTransform();
             });
 
-            hammer.on('panend', () => {
+            hammer.on('pinchend panend', () => {
                 lastPanX = currentPanX;
                 lastPanY = currentPanY;
             });
         }
 
-        function updateCameraTransform() {
+        function updateImageTransform() {
             const translateX = currentPanX / currentScale;
             const translateY = currentPanY / currentScale;
-            cameraFeed.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentScale})`;
             imageOverlay.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentScale})`;
         }
 
@@ -217,7 +206,7 @@
             lastPanX = 0;
             lastPanY = 0;
             zoomSlider.value = 1;
-            updateCameraTransform();
+            updateImageTransform();
         }
 
         // Start the camera when the page loads
@@ -225,9 +214,6 @@
 
         // Handle window resize
         window.addEventListener('resize', fitCameraToScreen);
-
-        // Setup pinch zoom after the page loads
-        window.addEventListener('load', setupPinchZoom);
     </script>
 </body>
 </html>
