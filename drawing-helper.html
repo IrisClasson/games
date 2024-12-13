@@ -104,10 +104,9 @@
                 const constraints = {
                     video: {
                         facingMode: 'environment',
-                        width: { ideal: window.innerHeight },
-                        height: { ideal: window.innerWidth },
-                        aspectRatio: { ideal: 9/16 },
-                        zoom: 1
+                        width: { ideal: window.innerWidth },
+                        height: { ideal: window.innerHeight },
+                        aspectRatio: { ideal: window.innerWidth / window.innerHeight }
                     }
                 };
                 stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -126,15 +125,21 @@
         function fitCameraToScreen() {
             const { videoWidth, videoHeight } = cameraFeed;
             const { width, height } = container.getBoundingClientRect();
-            const widthRatio = width / videoHeight;
-            const heightRatio = height / videoWidth;
-            const ratio = Math.max(widthRatio, heightRatio);
             
-            cameraFeed.style.width = `${videoHeight * ratio}px`;
-            cameraFeed.style.height = `${videoWidth * ratio}px`;
-            cameraFeed.style.left = `${(width - videoHeight * ratio) / 2}px`;
-            cameraFeed.style.top = `${(height - videoWidth * ratio) / 2}px`;
-            cameraFeed.style.transform = 'rotate(90deg)';
+            let scale;
+            if (width / height > videoWidth / videoHeight) {
+                // The container is wider than the video
+                scale = height / videoHeight;
+            } else {
+                // The container is taller than the video
+                scale = width / videoWidth;
+            }
+            
+            cameraFeed.style.width = `${videoWidth * scale}px`;
+            cameraFeed.style.height = `${videoHeight * scale}px`;
+            cameraFeed.style.left = `${(width - videoWidth * scale) / 2}px`;
+            cameraFeed.style.top = `${(height - videoHeight * scale) / 2}px`;
+            cameraFeed.style.transform = 'none'; // Remove rotation
         }
 
         // Handle image upload
