@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rainbow Worm Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        canvas {
+            border: 1px solid #000;
+        }
+        #startButton, #pauseButton {
+            position: absolute;
+            padding: 10px;
+            font-size: 16px;
+        }
+        #startButton { top: 10px; left: 10px; }
+        #pauseButton { top: 10px; left: 120px; }
+    </style>
+</head>
+<body>
+    <button id="startButton">Start Game</button>
+    <button id="pauseButton">Pause</button>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startButton = document.getElementById('startButton');
+        const pauseButton = document.getElementById('pauseButton');
+
+        canvas.width = window.innerWidth - 20;
+        canvas.height = window.innerHeight - 20;
+
+        const boysImg = new Image();
+        boysImg.src = 'images/boys.png';
+
+        const worm = {
+            body: [{x: canvas.width / 2, y: canvas.height / 2, color: 'red'}],
+            radius: 60, // Tripled the size
+            speed: 6, // Increased speed to match new size
+            direction: Math.random() * Math.PI * 2,
+            targetLength: 20,
+            spacing: 300 // Added spacing between body segments
+        };
+
+        let isQuiet = true;
+        let audioContext;
+        let analyser;
+        let dataArray;
+        let isPaused = false;
+
+        const rainbowColors = [
+            '#FF0000', '#FF7F00', '#FFFF00', '#00FF00', 
+            '#0000FF', '#4B0082', '#9400D3'
+        ];
+
+        function getNextRainbowColor() {
+            return rainbowColors[worm.body.length % rainbowColors.length];
+        }
+
+        function drawWorm() {
+            // Draw body
+            for (let i = worm.body.length - 1; i > 0; i--) {
+                const segment = worm.body[i];
+                ctx.fillStyle = segment.color;
+                ctx.beginPath();
+                ctx.arc(segment.x, segment.y, worm.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Draw head (boys image)
+            const head = worm.body[0];
+            ctx.save();
+            ctx.translate(head.x, head.y);
+            ctx.rotate(worm.direction + Math.PI / 2);
+            ctx.drawImage(boysImg, -worm.radius, -worm.radius, worm.radius * 2, worm.radius * 2);
+            ctx.restore();
+        }
+
+        function moveWorm() {
+        const head = worm.body[0];
+        const newHead = {
+            x: head.x + Math.cos(worm.direction) * worm.speed,
+            y: head.y + Math.sin(worm.direction) * worm.speed,
+            color: getNextRainbowColor()
+        };
+
+        if (newHead.x < worm.radius || newHead.x > canvas.width - worm.radius) {
+            worm.direction = Math.PI - worm.direction;
+        }
+        if (newHead.y < worm.radius || newHead.y > canvas.height - worm.radius) {
+            worm.direction = -worm.direction;
+        }
+
+        worm.body.unshift(newHead);
+
+        // Remove excess segments to maintain spacing
+        while (worm.body.length > 1) {
+            const lastSegment = worm.body[worm.body.length - 1];
+            const secondLastSegment = worm.body[worm.body.length - 2];
+            const dx = lastSegment.x - secondLastSegment.x;
+            const dy = lastSegment.y - secondLastSegment.y;
+            const distance = Math.sqrt(dx*dx + dy*dy);
+            
+            if (distance < worm.spacing) {
+                break;
+            }
+            worm.body.pop();
+        }
+
+        if (isQuiet && worm.body.length < worm.targetLength) {
+            // Worm grows when quiet
+        } else if (!isQuiet && worm.body.length > 1) {
+            worm.body.pop();
+        }
+
+        worm.direction += (Math.random() - 0.5) * 0.2;
+    }
+
+        function updateGame() {
+            if (!isPaused) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                moveWorm();
+                drawWorm();
+
+                analyser.getByteTimeDomainData(dataArray);
+                const volume = Math.max(...dataArray) - 128;
+                isQuiet = volume < 5; // Adjust this threshold as needed
+
+                ctx.fillStyle = 'black';
+                ctx.font = '20px Arial';
+                ctx.fillText(`Worm Length: ${worm.body.length}`, 10, 30);
+                ctx.fillText(`Target Length: ${worm.targetLength}`, 10, 60);
+                ctx.fillText(`Volume: ${volume}`, 10, 90);
+
+                if (worm.body.length === worm.targetLength) {
+                    ctx.fillStyle = 'green';
+                    ctx.font = '40px Arial';
+                    ctx.fillText('You Win!', canvas.width / 2 - 70, canvas.height / 2);
+                }
+            }
+
+            requestAnimationFrame(updateGame);
+        }
+
+        startButton.addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioContext.createMediaStreamSource(stream);
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 256;
+                source.connect(analyser);
+                dataArray = new Uint8Array(analyser.fftSize);
+                
+                startButton.style.display = 'none';
+                updateGame();
+            } catch (err) {
+                console.error('Error accessing microphone:', err);
+                alert('Unable to access the microphone. Please ensure you have given permission and try again.');
+            }
+        });
+
+        pauseButton.addEventListener('click', () => {
+            isPaused = !isPaused;
+            pauseButton.textContent = isPaused ? 'Resume' : 'Pause';
+        });
+
+        // Wait for the image to load before starting the game
+        boysImg.onload = () => {
+            startButton.disabled = false;
+        };
+    </script>
+</body>
+</html>
