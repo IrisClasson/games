@@ -437,11 +437,11 @@ body {
     }
 
     .word-card {
-        padding: 1.5rem 2.5rem;
+        padding: 1.5rem 2rem;
     }
 
     .word-text {
-        font-size: 2rem;
+        font-size: 1.8rem;
     }
 
     .celebration-content h1 {
@@ -450,5 +450,15 @@ body {
 
     .celebration-content p {
         font-size: 1.3rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .word-card {
+        padding: 1rem 1.5rem;
+    }
+
+    .word-text {
+        font-size: 1.5rem;
     }
 }
