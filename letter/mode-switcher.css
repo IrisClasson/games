@@ -1,0 +1,338 @@
+/* Mode Switcher - Shared Styles */
+
+/* Unified Game Header */
+.unified-game-header {
+    background: rgba(26, 26, 46, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 1rem 2rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-left {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.header-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+}
+
+.header-center h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #9D4EDD;
+}
+
+.header-right {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+/* Back arrow button */
+.btn-back-arrow {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(157, 78, 221, 0.2);
+    color: #E0E0E0;
+    border: 2px solid #9D4EDD;
+    border-radius: 50%;
+    font-size: 1.8rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-weight: bold;
+}
+
+.btn-back-arrow:hover {
+    background: rgba(157, 78, 221, 0.4);
+    border-color: #FF6B9D;
+    color: #FF6B9D;
+    transform: scale(1.1);
+}
+
+/* Mode dropdown in header */
+.mode-selector {
+    position: relative;
+    display: inline-block;
+}
+
+.mode-dropdown-btn {
+    padding: 0.75rem 1.5rem;
+    background: rgba(157, 78, 221, 0.2);
+    color: #E0E0E0;
+    border: 2px solid #9D4EDD;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.mode-dropdown-btn:hover {
+    background: rgba(157, 78, 221, 0.4);
+    border-color: #FF6B9D;
+}
+
+.mode-dropdown-btn::after {
+    content: '▼';
+    font-size: 0.8rem;
+}
+
+.mode-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    background: #1a1a2e;
+    border: 2px solid #9D4EDD;
+    border-radius: 8px;
+    min-width: 200px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: none;
+}
+
+.mode-dropdown-menu.show {
+    display: block;
+}
+
+.mode-option {
+    padding: 1rem 1.5rem;
+    color: #E0E0E0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid rgba(157, 78, 221, 0.2);
+}
+
+.mode-option:last-child {
+    border-bottom: none;
+}
+
+.mode-option:hover {
+    background: rgba(157, 78, 221, 0.3);
+    color: #FF6B9D;
+}
+
+.mode-option.active {
+    background: rgba(157, 78, 221, 0.4);
+    color: #FFD700;
+    font-weight: 700;
+}
+
+/* Letter selection modal */
+.letter-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(26, 26, 46, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.letter-modal.show {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.letter-modal-content {
+    background: #16213e;
+    border: 3px solid #9D4EDD;
+    border-radius: 20px;
+    padding: 2rem;
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+}
+
+.letter-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.letter-modal-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #9D4EDD;
+    margin: 0;
+}
+
+.letter-modal-close {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: #E0E0E0;
+    cursor: pointer;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.letter-modal-close:hover {
+    background: rgba(255, 107, 157, 0.2);
+    color: #FF6B9D;
+}
+
+.letter-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.letter-item {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(157, 78, 221, 0.2);
+    border: 2px solid #9D4EDD;
+    border-radius: 12px;
+    font-size: 2rem;
+    font-weight: 900;
+    color: #E0E0E0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.letter-item:hover {
+    background: rgba(157, 78, 221, 0.4);
+    transform: scale(1.1);
+    border-color: #FF6B9D;
+}
+
+.letter-item.completed {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    border-color: #4CAF50;
+    color: white;
+}
+
+.letter-item.completed::after {
+    content: '✓';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    font-size: 1rem;
+    background: white;
+    color: #4CAF50;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.letter-item.selected {
+    background: rgba(255, 215, 0, 0.3);
+    border-color: #FFD700;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .unified-game-header {
+        padding: 0.75rem 1rem;
+        grid-template-columns: auto 1fr auto;
+        gap: 0.5rem;
+    }
+
+    .header-center h2 {
+        font-size: 1.2rem;
+    }
+
+    .header-center {
+        gap: 1rem;
+    }
+
+    .btn-back-arrow {
+        width: 40px;
+        height: 40px;
+        font-size: 1.5rem;
+    }
+
+    .mode-dropdown-btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    .letter-modal-content {
+        padding: 1.5rem;
+    }
+
+    .letter-modal-title {
+        font-size: 1.4rem;
+    }
+
+    .letter-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.75rem;
+    }
+
+    .letter-item {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .unified-game-header {
+        padding: 0.5rem 0.75rem;
+    }
+
+    .header-center h2 {
+        font-size: 1rem;
+    }
+
+    .btn-back-arrow {
+        width: 35px;
+        height: 35px;
+        font-size: 1.3rem;
+    }
+
+    .mode-dropdown-btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+    }
+
+    .letter-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+    }
+
+    .letter-item {
+        font-size: 1.3rem;
+    }
+}

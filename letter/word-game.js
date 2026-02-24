@@ -33,14 +33,13 @@ const SWEDISH_WORDS = {
     'Ö': ['öl', 'ö', 'öppen', 'över', 'öde']
 };
 
-// Letter frequency distribution (same as main page)
-const letterDistribution = {
-    'E': 37, 'A': 35, 'N': 32, 'R': 30, 'T': 28, 'S': 24,
-    'L': 19, 'I': 19, 'D': 16, 'O': 16, 'M': 13, 'K': 12,
-    'G': 11, 'V': 9, 'H': 8, 'F': 7, 'U': 7, 'Ä': 7,
-    'P': 6, 'Å': 5, 'Ö': 5, 'B': 5, 'C': 5, 'J': 3,
-    'Y': 2, 'X': 1, 'W': 1, 'Z': 1, 'Q': 1
-};
+// Note: The following shared resources are provided by mode-switcher.js:
+// - letterDistribution
+// - generateYearCalendar()
+// - shuffleWithSeed()
+// - getDayOfYear()
+// - getTodaysLetter()
+// - getActiveLetter()
 
 // Game state
 let currentRound = 1;
@@ -65,49 +64,6 @@ const FIREWORK_COLORS = [
     '#FF1493', '#FF6B9D', '#9D4EDD', '#FFD700', '#FF69B4',
     '#DA70D6', '#FF00FF', '#FF6347', '#FFA500', '#00CED1'
 ];
-
-// Generate 365-day calendar
-function generateYearCalendar() {
-    const calendar = [];
-    for (const [letter, count] of Object.entries(letterDistribution)) {
-        for (let i = 0; i < count; i++) {
-            calendar.push(letter);
-        }
-    }
-    return shuffleWithSeed(calendar, 2024);
-}
-
-// Shuffle with seed
-function shuffleWithSeed(array, seed) {
-    const arr = [...array];
-    let currentSeed = seed;
-    const seededRandom = () => {
-        currentSeed = (currentSeed * 9301 + 49297) % 233280;
-        return currentSeed / 233280;
-    };
-    for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(seededRandom() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
-}
-
-// Get day of year
-function getDayOfYear(date) {
-    const start = new Date(date.getFullYear(), 0, 0);
-    const diff = date - start;
-    const oneDay = 1000 * 60 * 60 * 24;
-    return Math.floor(diff / oneDay);
-}
-
-// Get today's letter
-function getTodaysLetter() {
-    const today = new Date();
-    const dayOfYear = getDayOfYear(today);
-    const calendar = generateYearCalendar();
-    const index = (dayOfYear - 1) % 365;
-    return calendar[index];
-}
 
 // Speak word using text-to-speech
 function speakWord(word) {
@@ -199,10 +155,18 @@ function handleDragStart(e) {
     e.target.classList.add('dragging');
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/html', e.target.innerHTML);
+
+    // Disable scrolling during drag
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
 }
 
 function handleDragEnd(e) {
     e.target.classList.remove('dragging');
+
+    // Re-enable scrolling after drag
+    document.body.style.overflow = '';
+    document.body.style.touchAction = '';
 }
 
 function handleDragOver(e) {
@@ -319,7 +283,7 @@ function showCelebration() {
 
 // Initialize game
 function initGame() {
-    todaysLetter = getTodaysLetter();
+    todaysLetter = getActiveLetter();
     jarLetterDisplay.textContent = todaysLetter;
     currentRound = 1;
     roundDisplay.textContent = currentRound;

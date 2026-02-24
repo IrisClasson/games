@@ -1,13 +1,12 @@
 // Color Game - Paint the Letter
 
-// Letter frequency distribution
-const letterDistribution = {
-    'E': 37, 'A': 35, 'N': 32, 'R': 30, 'T': 28, 'S': 24,
-    'L': 19, 'I': 19, 'D': 16, 'O': 16, 'M': 13, 'K': 12,
-    'G': 11, 'V': 9, 'H': 8, 'F': 7, 'U': 7, 'Ä': 7,
-    'P': 6, 'Å': 5, 'Ö': 5, 'B': 5, 'C': 5, 'J': 3,
-    'Y': 2, 'X': 1, 'W': 1, 'Z': 1, 'Q': 1
-};
+// Note: The following shared resources are provided by mode-switcher.js:
+// - letterDistribution
+// - generateYearCalendar()
+// - shuffleWithSeed()
+// - getDayOfYear()
+// - getTodaysLetter()
+// - getActiveLetter()
 
 // Game state
 let canvas, ctx;
@@ -26,49 +25,6 @@ const progressText = document.getElementById('progress-text');
 const sparklesContainer = document.getElementById('sparkles-container');
 const celebrationScreen = document.getElementById('celebration');
 const playAgainBtn = document.getElementById('play-again-btn');
-
-// Generate 365-day calendar
-function generateYearCalendar() {
-    const calendar = [];
-    for (const [letter, count] of Object.entries(letterDistribution)) {
-        for (let i = 0; i < count; i++) {
-            calendar.push(letter);
-        }
-    }
-    return shuffleWithSeed(calendar, 2024);
-}
-
-// Shuffle with seed
-function shuffleWithSeed(array, seed) {
-    const arr = [...array];
-    let currentSeed = seed;
-    const seededRandom = () => {
-        currentSeed = (currentSeed * 9301 + 49297) % 233280;
-        return currentSeed / 233280;
-    };
-    for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(seededRandom() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
-}
-
-// Get day of year
-function getDayOfYear(date) {
-    const start = new Date(date.getFullYear(), 0, 0);
-    const diff = date - start;
-    const oneDay = 1000 * 60 * 60 * 24;
-    return Math.floor(diff / oneDay);
-}
-
-// Get today's letter
-function getTodaysLetter() {
-    const today = new Date();
-    const dayOfYear = getDayOfYear(today);
-    const calendar = generateYearCalendar();
-    const index = (dayOfYear - 1) % 365;
-    return calendar[index];
-}
 
 // Setup canvas
 function setupCanvas() {
@@ -96,12 +52,12 @@ function drawLetter() {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    // Fill with white
-    ctx.fillStyle = 'white';
+    // Fill with almost transparent white (10% opacity)
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
     ctx.fillText(todaysLetter, canvas.width / 2, canvas.height / 2);
 
-    // Thin black outline
-    ctx.strokeStyle = 'black';
+    // Thin semi-transparent outline for guidance
+    ctx.strokeStyle = 'rgba(200, 200, 200, 0.3)';
     ctx.lineWidth = 2;
     ctx.strokeText(todaysLetter, canvas.width / 2, canvas.height / 2);
 }
@@ -281,7 +237,7 @@ function selectColor(color) {
 
 // Initialize game
 function initGame() {
-    todaysLetter = getTodaysLetter();
+    todaysLetter = getActiveLetter();
 
     setupCanvas();
 

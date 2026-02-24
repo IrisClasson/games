@@ -1,20 +1,13 @@
 // Letter Catching Game
 
-// Swedish alphabet
-const SWEDISH_ALPHABET = [
-    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-    'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-    'Å', 'Ä', 'Ö'
-];
-
-// Letter frequency distribution (same as main page)
-const letterDistribution = {
-    'E': 37, 'A': 35, 'N': 32, 'R': 30, 'T': 28, 'S': 24,
-    'L': 19, 'I': 19, 'D': 16, 'O': 16, 'M': 13, 'K': 12,
-    'G': 11, 'V': 9, 'H': 8, 'F': 7, 'U': 7, 'Ä': 7,
-    'P': 6, 'Å': 5, 'Ö': 5, 'B': 5, 'C': 5, 'J': 3,
-    'Y': 2, 'X': 1, 'W': 1, 'Z': 1, 'Q': 1
-};
+// Note: The following shared resources are provided by mode-switcher.js:
+// - SWEDISH_ALPHABET
+// - letterDistribution
+// - generateYearCalendar()
+// - shuffleWithSeed()
+// - getDayOfYear()
+// - getTodaysLetter()
+// - getActiveLetter()
 
 // Game state
 let score = 0;
@@ -39,49 +32,6 @@ const PARTICLE_COLORS = [
     '#FF1493', '#DA70D6', '#FF00FF', '#FF6347', '#FFA500'
 ];
 
-// Generate 365-day calendar (same logic as main page)
-function generateYearCalendar() {
-    const calendar = [];
-    for (const [letter, count] of Object.entries(letterDistribution)) {
-        for (let i = 0; i < count; i++) {
-            calendar.push(letter);
-        }
-    }
-    return shuffleWithSeed(calendar, 2024);
-}
-
-// Shuffle with seed for consistency
-function shuffleWithSeed(array, seed) {
-    const arr = [...array];
-    let currentSeed = seed;
-    const seededRandom = () => {
-        currentSeed = (currentSeed * 9301 + 49297) % 233280;
-        return currentSeed / 233280;
-    };
-    for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(seededRandom() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
-}
-
-// Get day of year
-function getDayOfYear(date) {
-    const start = new Date(date.getFullYear(), 0, 0);
-    const diff = date - start;
-    const oneDay = 1000 * 60 * 60 * 24;
-    return Math.floor(diff / oneDay);
-}
-
-// Get today's letter
-function getTodaysLetter() {
-    const today = new Date();
-    const dayOfYear = getDayOfYear(today);
-    const calendar = generateYearCalendar();
-    const index = (dayOfYear - 1) % 365;
-    return calendar[index];
-}
-
 // Get random letter from Swedish alphabet
 // Every 4th or 5th letter is today's letter
 function getRandomLetter() {
@@ -105,8 +55,8 @@ function createFallingLetter() {
     const letterChar = getRandomLetter();
 
     letter.className = 'falling-letter';
-    if (letterChar === 'R') {
-        letter.classList.add('letter-r');
+    if (letterChar === todaysLetter) {
+        letter.classList.add('target-letter');
     }
 
     letter.textContent = letterChar;
@@ -118,7 +68,7 @@ function createFallingLetter() {
 
     // Random fall duration (5-8 seconds)
     const duration = 5 + Math.random() * 3;
-    letter.style.animationDuration = duration + 's';
+    letter.style.setProperty('--fall-duration', duration + 's');
 
     // Add click handler
     letter.addEventListener('click', () => handleLetterClick(letter, letterChar));
@@ -141,7 +91,7 @@ function handleLetterClick(letterElement, letterChar) {
     const x = rect.left + rect.width / 2;
     const y = rect.top + rect.height / 2;
 
-    if (letterChar === 'R') {
+    if (letterChar === todaysLetter) {
         // Correct letter - add point and explode
         score++;
         scoreDisplay.textContent = score;
@@ -242,8 +192,8 @@ function endGame() {
 // Event listeners
 restartBtn.addEventListener('click', startGame);
 
-// Initialize today's letter
-todaysLetter = getTodaysLetter();
+// Initialize the active letter (respects mode)
+todaysLetter = getActiveLetter();
 
 // Start game on load
 startGame();

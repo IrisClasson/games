@@ -81,7 +81,7 @@ body {
     font-weight: 900;
     cursor: pointer;
     user-select: none;
-    animation: fall linear forwards;
+    animation: fall var(--fall-duration, 6s) linear forwards;
     color: var(--accent-color);
     text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.2);
     transition: transform 0.1s ease;
@@ -92,9 +92,25 @@ body {
     transform: scale(1.2);
 }
 
-.falling-letter.letter-r {
-    color: var(--secondary-color);
+.falling-letter.target-letter {
+    color: #FFD700;
     font-weight: 900;
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.6),
+                 4px 4px 8px rgba(0, 0, 0, 0.3);
+    /* Keep fall animation and add glow - both need to run */
+    animation: fall var(--fall-duration, 6s) linear forwards, glow 1.5s ease-in-out infinite;
+}
+
+@keyframes glow {
+    0%, 100% {
+        text-shadow: 0 0 20px rgba(255, 215, 0, 0.6),
+                     4px 4px 8px rgba(0, 0, 0, 0.3);
+    }
+    50% {
+        text-shadow: 0 0 30px rgba(255, 215, 0, 0.9),
+                     0 0 40px rgba(255, 215, 0, 0.6),
+                     4px 4px 8px rgba(0, 0, 0, 0.3);
+    }
 }
 
 @keyframes fall {

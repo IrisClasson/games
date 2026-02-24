@@ -1,97 +1,13 @@
 // Swedish Letter of the Day
-// Letters distributed based on Swedish language frequency
+// Main page functionality
 
-// Letter frequency distribution for 365 days
-// Based on Swedish letter frequency statistics
-const letterDistribution = {
-    'E': 37,  // Most common
-    'A': 35,
-    'N': 32,
-    'R': 30,
-    'T': 28,
-    'S': 24,
-    'L': 19,
-    'I': 19,
-    'D': 16,
-    'O': 16,
-    'M': 13,
-    'K': 12,
-    'G': 11,
-    'V': 9,
-    'H': 8,
-    'F': 7,
-    'U': 7,
-    'Ä': 7,
-    'P': 6,
-    'Å': 5,
-    'Ö': 5,
-    'B': 5,
-    'C': 5,
-    'J': 3,
-    'Y': 2,
-    'X': 1,
-    'W': 1,
-    'Z': 1,
-    'Q': 1   // Least common
-};
-
-// Generate the 365-day calendar
-function generateYearCalendar() {
-    const calendar = [];
-
-    // Create array with letters repeated according to their frequency
-    for (const [letter, count] of Object.entries(letterDistribution)) {
-        for (let i = 0; i < count; i++) {
-            calendar.push(letter);
-        }
-    }
-
-    // Shuffle the calendar using a seeded random for consistency
-    // Using a simple Fisher-Yates shuffle with a fixed seed
-    const shuffled = shuffleWithSeed(calendar, 2024);
-
-    return shuffled;
-}
-
-// Shuffle array with a seed for consistent results
-function shuffleWithSeed(array, seed) {
-    const arr = [...array];
-    let currentSeed = seed;
-
-    // Simple seeded random number generator
-    const seededRandom = () => {
-        currentSeed = (currentSeed * 9301 + 49297) % 233280;
-        return currentSeed / 233280;
-    };
-
-    // Fisher-Yates shuffle
-    for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(seededRandom() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-
-    return arr;
-}
-
-// Get day of year (1-365)
-function getDayOfYear(date) {
-    const start = new Date(date.getFullYear(), 0, 0);
-    const diff = date - start;
-    const oneDay = 1000 * 60 * 60 * 24;
-    const dayOfYear = Math.floor(diff / oneDay);
-    return dayOfYear;
-}
-
-// Get letter for today
-function getTodaysLetter() {
-    const today = new Date();
-    const dayOfYear = getDayOfYear(today);
-    const calendar = generateYearCalendar();
-
-    // Use modulo to handle day 366 in leap years
-    const index = (dayOfYear - 1) % 365;
-    return calendar[index];
-}
+// Note: The following shared functions are provided by mode-switcher.js:
+// - letterDistribution
+// - generateYearCalendar()
+// - shuffleWithSeed()
+// - getDayOfYear()
+// - getTodaysLetter()
+// - getActiveLetter()
 
 // Format date in Swedish
 function formatDate(date) {
@@ -144,8 +60,8 @@ function init() {
     const letterElement = document.getElementById('letter');
     const dateElement = document.getElementById('date');
 
-    // Get and display today's letter
-    const todaysLetter = getTodaysLetter();
+    // Get and display the active letter (respects mode)
+    const todaysLetter = getActiveLetter();
     letterElement.textContent = todaysLetter;
 
     // Add animation class

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rolodex - Dagens Bokstav</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="rolodex-game.css">
+    <link rel="stylesheet" href="mode-switcher.css">
+</head>
+<body>
+    <!-- Letter Selection Modal -->
+    <div id="letter-modal" class="letter-modal">
+        <div class="letter-modal-content">
+            <div class="letter-modal-header">
+                <h2 class="letter-modal-title">Välj en bokstav</h2>
+                <button id="letter-modal-close" class="letter-modal-close">&times;</button>
+            </div>
+            <div id="letter-grid" class="letter-grid"></div>
+        </div>
+    </div>
+
+    <div id="game-container">
+        <!-- Unified Header -->
+        <div id="game-header" class="unified-game-header">
+            <div class="header-left">
+                <a href="index.html" class="btn-back-arrow">←</a>
+            </div>
+            <div class="header-center">
+                <h2 id="game-title">Rolodex</h2>
+            </div>
+            <div class="header-right">
+                <!-- Mode Switcher -->
+                <div class="mode-selector">
+                    <button id="mode-dropdown-btn" class="mode-dropdown-btn">Dagens bokstav</button>
+                    <div id="mode-dropdown-menu" class="mode-dropdown-menu">
+                        <div id="mode-daily" class="mode-option">Dagens bokstav</div>
+                        <div id="mode-select" class="mode-option">Välj bokstav...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rolodex View -->
+        <div id="rolodex-view" class="game-view">
+            <!-- Letter Navigation -->
+            <div id="letter-jump-nav">
+                <button id="prev-letter-btn" class="nav-arrow">◀</button>
+                <div id="current-letter-indicator"></div>
+                <button id="next-letter-btn" class="nav-arrow">▶</button>
+            </div>
+
+            <!-- Scrollable Rolodex Container -->
+            <div id="rolodex-container">
+                <div id="rolodex-cards">
+                    <!-- Rolodex cards will be generated here -->
+                </div>
+            </div>
+
+            <div class="instruction">Bläddra genom bokstäverna och klicka på ett ord för att stava det!</div>
+        </div>
+
+        <!-- Spelling Game View -->
+        <div id="spelling-view" class="game-view hidden">
+            <div id="spelling-container">
+                <!-- Current word display (with audio) -->
+                <div id="word-display">
+                    <button id="speak-word-btn" class="speak-btn">🔊</button>
+                    <div id="target-word">KATT</div>
+                </div>
+
+                <!-- Letter slots (where letters are dropped) -->
+                <div id="letter-slots"></div>
+
+                <!-- Scrambled letters (draggable) -->
+                <div id="scrambled-letters"></div>
+
+                <!-- Action buttons -->
+                <div id="action-buttons">
+                    <button id="back-to-rolodex-btn" class="btn btn-secondary">Tillbaka</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Celebration overlay -->
+        <div id="celebration" class="hidden">
+            <div class="celebration-content">
+                <h1>🎉 Rätt! 🎉</h1>
+                <p id="celebration-word">KATT</p>
+                <button id="next-word-btn" class="btn btn-primary">Nästa ord</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="mode-switcher.js"></script>
+    <script src="rolodex-game.js"></script>
+</body>
+</html>

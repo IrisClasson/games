@@ -6,12 +6,27 @@
     <title>Bokstavsspel - Fånga R</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="game.css">
+    <link rel="stylesheet" href="mode-switcher.css">
 </head>
 <body>
+    <!-- Letter Selection Modal -->
+    <div id="letter-modal" class="letter-modal">
+        <div class="letter-modal-content">
+            <div class="letter-modal-header">
+                <h2 class="letter-modal-title">Välj en bokstav</h2>
+                <button id="letter-modal-close" class="letter-modal-close">&times;</button>
+            </div>
+            <div id="letter-grid" class="letter-grid"></div>
+        </div>
+    </div>
+
     <div id="game-container">
-        <!-- Header with score and timer -->
-        <div id="game-header">
-            <div class="header-content">
+        <!-- Unified Header with score and timer -->
+        <div id="game-header" class="unified-game-header">
+            <div class="header-left">
+                <a href="index.html" class="btn-back-arrow">←</a>
+            </div>
+            <div class="header-center">
                 <div id="score-display">
                     <span class="label">Poäng:</span>
                     <span id="score">0</span>
@@ -19,6 +34,16 @@
                 <div id="timer-display">
                     <span class="label">Tid:</span>
                     <span id="timer">60</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <!-- Mode Switcher -->
+                <div class="mode-selector">
+                    <button id="mode-dropdown-btn" class="mode-dropdown-btn">Dagens bokstav</button>
+                    <div id="mode-dropdown-menu" class="mode-dropdown-menu">
+                        <div id="mode-daily" class="mode-option">Dagens bokstav</div>
+                        <div id="mode-select" class="mode-option">Välj bokstav...</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -39,6 +64,7 @@
         </div>
     </div>
 
+    <script src="mode-switcher.js"></script>
     <script src="game.js"></script>
 </body>
 </html>
