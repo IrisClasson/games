@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bokstavsspel - Fånga R</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="game.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- Header with score and timer -->
+        <div id="game-header">
+            <div class="header-content">
+                <div id="score-display">
+                    <span class="label">Poäng:</span>
+                    <span id="score">0</span>
+                </div>
+                <div id="timer-display">
+                    <span class="label">Tid:</span>
+                    <span id="timer">60</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game area where letters fall -->
+        <div id="game-area"></div>
+
+        <!-- Game over screen (hidden initially) -->
+        <div id="game-over" class="hidden">
+            <div class="game-over-content">
+                <h1>Spelet är slut!</h1>
+                <p class="final-score">Din poäng: <span id="final-score">0</span></p>
+                <div class="button-group">
+                    <button id="restart-btn" class="btn btn-primary">Spela igen</button>
+                    <a href="index.html" class="btn btn-secondary">Tillbaka</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
